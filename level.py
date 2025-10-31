@@ -6,7 +6,7 @@ from item import Item
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
 TILE_COLUMNS = 25
-TILE_ROWS = 13
+TILE_ROWS = 16
 TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 ITEM_SIZE = TILE_SIZE * 0.8
 
@@ -30,9 +30,9 @@ class Level:
             "                         ",
             "   XXXX                  ",
             "                  XXX    ",
-            "                         ",
-            "                         ",
-            "                         ",
+            "                   XX    ",
+            "                    X    ",
+            "                    XX   ",
             "          XXX            ",
             "                         ",
             "                         ",
@@ -132,7 +132,7 @@ class Level:
             selected_items = random.choices(item_types, k=len(selected_positions))
 
             for pos, item_type in zip(selected_positions, selected_items):
-                item = Item(pos, (TILE_SIZE // 2, TILE_SIZE // 2), item_type)
+                item = Item(pos, (TILE_SIZE, TILE_SIZE), item_type)
                 self.items.add(item)
 
     def restart_game(self):
@@ -149,7 +149,8 @@ class Level:
         player.update()
 
         # Check if player died from falling
-        if player.died:
+        keys = pygame.key.get_pressed()
+        if player.died or keys[pygame.K_r]:
             self.restart_game()
             return
 
