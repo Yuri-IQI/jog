@@ -1,10 +1,11 @@
 import pygame
 
 # Constants
-TILE_SIZE = 40  # Make sure this matches the TILE_SIZE in level.py
+TILE_SIZE = 40 
+SCREEN_HEIGHT = 600 
+MAX_SAFE_FALL_HEIGHT = 8  
 
 class Player(pygame.sprite.Sprite):
-    MAX_SAFE_FALL_HEIGHT = 8  # Maximum tiles the player can safely fall
     
     def __init__(self, pos, size=(64, 64)):
         super().__init__()
@@ -17,9 +18,11 @@ class Player(pygame.sprite.Sprite):
         self.frame_index = 0
         self.animation_state = 'idle'
 
+        # Imagem inicial
         self.image = self.animations['idle'][0]
         self.rect = self.image.get_rect(topleft=pos)
 
+        # Movimento e física
         self.direction = pygame.math.Vector2(0, 0)
         self.speed = 6
         self.base_gravity = 0.8
@@ -30,26 +33,55 @@ class Player(pygame.sprite.Sprite):
         self.facing_right = True
         self.on_ground = False
 
+        # Contadores
         self.good_items_collected = 0
         self.bad_items_collected = 0
         
-        # Altitude tracking
-        self.fall_start_y = 0
-        self.current_fall_distance = 0
-        self.max_fall_distance = 0
+        # Queda
+        self.fall_start_y = pos[1]
+        self.current_fall_distance = 0.0
+        self.max_fall_distance = 0.0
         self.is_falling = False
         self.died = False
 
+        # Controle de sprite “gordo”
+        self.fat_mode = False
+        self.fat_mode_timer = 0
+        self.fat_mode_duration = 2500  # 2,5s
+        self.last_tick = pygame.time.get_ticks()
+
     def import_character_assets(self):
-        """Load and scale animations."""
+        """Carrega sprites e define imagem de 'gordo'."""
         path = 'assets/player/'
-        self.animations['idle'] = [self.scale_image(pygame.image.load(f'{path}Boneco A1.png').convert_alpha())]
-        self.animations['run'] = [
-            self.scale_image(pygame.image.load(f'{path}Boneco A1.png').convert_alpha()),
-            self.scale_image(pygame.image.load(f'{path}Boneco A2.png').convert_alpha())
-        ]
-        self.animations['jump'] = [self.scale_image(pygame.image.load(f'{path}Boneco A2.png').convert_alpha())]
-        self.animations['fall'] = [self.scale_image(pygame.image.load(f'{path}Boneco A1.png').convert_alpha())]
+        
+        fallback_image = pygame.Surface(self.size, pygame.SRCALPHA)
+        pygame.draw.rect(fallback_image, (0, 100, 255), fallback_image.get_rect(), 0, 8) 
+
+        asset_paths = {
+            'idle': [f'{path}Boneco A1.png'],
+            'run': [f'{path}Boneco A1.png', f'{path}Boneco A2.png'],
+            'jump': [f'{path}Boneco A1.png'],
+            'fall': [f'{path}Boneco A1.png'],
+        }
+
+        for state, paths in asset_paths.items():
+            for p in paths:
+                try:
+                    image = pygame.image.load(p).convert_alpha()
+                    self.animations[state].append(self.scale_image(image))
+                except pygame.error:
+                    if not self.animations[state]:
+                        self.animations[state].append(fallback_image)
+                    print(f"[AVISO] Falha ao carregar sprite: {p}")
+            if not self.animations[state]:
+                self.animations[state].append(fallback_image)
+
+        # Sprite alternativo “gordo”
+        try:
+            fat_img = pygame.image.load(f'{path}Boneco GORDO 03.png').convert_alpha()
+            self.fat_image = self.scale_image(fat_img)
+        except Exception:
+            self.fat_image = fallback_image
 
     def scale_image(self, image):
         return pygame.transform.scale(image, self.size)
@@ -71,29 +103,39 @@ class Player(pygame.sprite.Sprite):
     def jump(self):
         self.direction.y = self.jump_speed
         self.on_ground = False
-        # Start tracking fall distance from the jump point
-        self.is_falling = True
-        self.fall_start_y = self.rect.y
 
     def apply_gravity(self):
         self.direction.y += self.gravity
-        
-        # Track falling only if we started falling from a jump
-        if self.is_falling and not self.on_ground:
-            # Only count the fall when moving downward (after reaching peak of jump)
-            if self.direction.y > 0:
-                self.current_fall_distance = (self.rect.y - self.fall_start_y) / TILE_SIZE
-                self.max_fall_distance = max(self.max_fall_distance, self.current_fall_distance)
-        elif self.on_ground:
-            # Check if the fall was too high before resetting
-            if self.is_falling and self.current_fall_distance > self.MAX_SAFE_FALL_HEIGHT:
-                self.died = True
-            self.is_falling = False
-            self.current_fall_distance = 0
-            
         self.rect.y += self.direction.y
+        
+        # --- Lógica de rastreamento de queda ---
+        if not self.on_ground and self.direction.y > 0:
+            if not self.is_falling:
+                self.is_falling = True
+                self.fall_start_y = self.rect.bottom
+                self.current_fall_distance = 0.0
+            
+            self.current_fall_distance = self.rect.bottom - self.fall_start_y
+            self.max_fall_distance = max(self.max_fall_distance, self.current_fall_distance)
+
+        elif self.on_ground:
+            if self.is_falling:
+                fall_tiles = self.current_fall_distance / TILE_SIZE
+                if fall_tiles > MAX_SAFE_FALL_HEIGHT:
+                    print(f"Dano de queda: {fall_tiles:.1f} tiles > {MAX_SAFE_FALL_HEIGHT}")
+                    self.died = True
+            
+            self.is_falling = False
+            self.current_fall_distance = 0.0
+            self.fall_start_y = self.rect.bottom
 
     def animate(self):
+        """Controla o estado de animação."""
+        if self.fat_mode:
+            # Quando em modo "gordo", fixa sprite
+            self.image = self.fat_image if self.facing_right else pygame.transform.flip(self.fat_image, True, False)
+            return
+
         if not self.on_ground:
             self.animation_state = 'jump' if self.direction.y < 0 else 'fall'
         else:
@@ -108,14 +150,25 @@ class Player(pygame.sprite.Sprite):
         self.image = image if self.facing_right else pygame.transform.flip(image, True, False)
 
     def update(self):
+        """Atualiza o jogador e o temporizador do modo 'gordo'."""
         self.get_input()
         self.animate()
 
+        # Atualiza timer do modo “gordo”
+        now = pygame.time.get_ticks()
+        if self.fat_mode and (now - self.fat_mode_timer >= self.fat_mode_duration):
+            self.fat_mode = False
+        self.last_tick = now
+
     def collect_item(self, item):
-        """Apply item effect to gravity."""
+        """Aplica efeito de gravidade e ativa sprite 'gordo' se item for ruim."""
         if item.is_good_item():
             self.good_items_collected += 1
         else:
             self.bad_items_collected += 1
+            # --- Ativa modo 'gordo' ---
+            self.fat_mode = True
+            self.fat_mode_timer = pygame.time.get_ticks()
 
+        # Ajusta gravidade
         self.gravity = max(self.min_gravity, min(self.gravity + item.gravity_effect, self.max_gravity))
