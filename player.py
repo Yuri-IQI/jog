@@ -78,7 +78,7 @@ class Player(pygame.sprite.Sprite):
 
         # Sprite alternativo “gordo”
         try:
-            fat_img = pygame.image.load(f'{path}Boneco GORDO 03.png').convert_alpha()
+            fat_img = pygame.image.load(f'{path}gordo/Gordo.png').convert_alpha()
             self.fat_image = self.scale_image(fat_img)
         except Exception:
             self.fat_image = fallback_image

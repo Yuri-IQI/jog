@@ -5,7 +5,7 @@ from item import Item
 
 # --- Constantes Globais ---
 SCREEN_WIDTH = 600
-TILE_COLUMNS = 25
+TILE_COLUMNS = 29
 TILE_ROWS = 28
 TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
@@ -53,35 +53,33 @@ class FinalLevel:
     # --- Layout ---
     def get_layout(self):
         return [
-            "                         ",
-            "     XXXXXXX     XXXXX   ",
-            "     X                 X ",
-            "     X   XXXXXXX   X   X ",
-            "     X         X   X   X ",
-            "     XXXXXXX   X   XXXXX ",
-            "           X   X         ",
-            "   XXXXX   X   XXXXXXX   ",
-            "   X   X   X         X   ",
-            "   X   XXXXX   XXXXXXX   ",
-            "   X         X   X       ",
-            "   XXXXXXX   X   X   X   ",
-            "         X   X   XXXXX   ",
-            "   XXXXXXX   X           ",
-            "   X         XXXXXXX     ",
-            "   X   XXXXX         X   ",
-            "   X   X   XXXXXXX   X   ",
-            "   XXXXX           X     ",
-            "         XXXXXXX   X     ",
-            "   XXXXX         XXXXX   ",
-            "   X   XXXXXXX         X ",
-            "   X           XXXXX   X ",
-            "   XXXXXXX           X X ",
-            "   X       XXXXXXX   X X ",
-            "   X   X           X X X ",
-            "   XXXXX   XXXXX   X X X ",
-            "         P             X ",
-            "XXXXXXXXXXXXXXXXXXXXXXXXX",
+            "   X    XXXXXXX  XXXX x X   XXXXXX ",
+            "    XX  X   X  x     x       X     ",
+            "    X   X   XXXXX   XXXXX   XXXXX  ",
+            " X  XXXXX x   x   XXXXX  X   x X   ",
+            "   X       XXXXX   XXXXX   XXXXX  X",
+            "   X   X    x   X      x X       X ",
+            "   XXXXX   XXXXX   XXXXX   XXXXX   ",
+            "       X       X       X       X   ",
+            "XXXX   XXXXX x  XXXXX   XXXXX   XXX",
+            "X  X    X   X  X   x   X  X X   XXX",
+            "X   XXXXXXX   XXXXX   XXXXX   XXXXX",
+            "X       X  X     X  X     X       X",
+            "XXXXXX   XXXXX   XXXXX   XXXXX   X ",
+            "X       X X   X   X       X       X",
+            "X   XXXXX   XXXXX   XXXXX   XXXXXX ",
+            "X       X       X       X         X",
+            "XXXX   XXXXX   XXXXX   XXXXX   XXXX",
+            "   X       X X      X  X     X   X ",
+            "   XXXXX   XXXXX   XXXXX   XXXXX   ",
+            "   X       X       X       X       ",
+            "   XXXXX   XXXXX   XXXXX   XXXXX   ",
+            "   X       X       X       X       ",
+            "   XXXXX   XXXXX   XXXXX   XXXXX   ",
+            "       P                       X   ",
+            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         ]
+
 
     # --- Spawn do jogador ---
     def find_spawn_point(self):
@@ -95,7 +93,7 @@ class FinalLevel:
     def load_images(self):
         # Fundo
         try:
-            raw_bg = pygame.image.load("assets/backgrounds/final_level_bg.jpg").convert()
+            raw_bg = pygame.image.load("assets/backgrounds/kim.jpeg").convert()
             self.background_image = pygame.transform.scale(raw_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
         except Exception:
             self.background_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -140,7 +138,7 @@ class FinalLevel:
 
         # Canhões
         try:
-            cannon_img = pygame.image.load("assets/cannons/cannon.png").convert_alpha()
+            cannon_img = pygame.image.load("assets/item/canhao.png").convert_alpha()
             self.cannon_image = pygame.transform.scale(cannon_img, (TILE_SIZE, TILE_SIZE))
         except Exception:
             self.cannon_image = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -148,7 +146,7 @@ class FinalLevel:
 
     # --- Música ---
     def start_music(self):
-        music_path = "assets/audio/final_boss.mp3"
+        music_path = "assets/backgrounds/Korea.mp3"
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
@@ -170,7 +168,7 @@ class FinalLevel:
 
     # --- Itens ---
     def place_items(self):
-        item_types = (['maca'] * 5 + ['alface'] * 4 + ['banana'] * 4)
+        item_types = (['maca'] * 5 + ['alface'] * 4 + ['banana'] * 4 + ['sorvete'] * 3 + ['hamburguer'] * 7 + ['refrigerante'] * 5)
         potential_positions = []
         for y, row in enumerate(self.layout):
             for x, cell in enumerate(row):
@@ -189,7 +187,12 @@ class FinalLevel:
 
     # --- Canhões ---
     def place_cannons(self):
-        positions = [(100, 400), (400, 250), (550, 500)]
+        positions = [
+            (50, 500), (150, 400), (250, 300),
+            (350, 200), (450, 100),
+            (500, 450), (400, 350), (200, 500),
+            (550, 250), (100, 250)
+        ]
         for pos in positions:
             cannon = pygame.sprite.Sprite()
             cannon.image = self.cannon_image
@@ -205,7 +208,7 @@ class FinalLevel:
             projectile = Item((cannon.rect.centerx, cannon.rect.centery),
                               (TILE_SIZE, TILE_SIZE), bad_food)
             projectile.direction = random.choice([-1, 1])
-            projectile.speed = 5
+            projectile.speed = 6
             self.projectiles.add(projectile)
 
     def update_projectiles(self):
@@ -335,8 +338,11 @@ class FinalLevel:
 
         # --- HUD ---
         info_text = f"Vidas: {max(0, 3 - player.bad_items_collected)} | Fase Final"
+        hud_bg = pygame.Surface((260, 40), pygame.SRCALPHA)
+        hud_bg.fill((0, 0, 0, 160))
+        screen.blit(hud_bg, (5, 5))
         info_surface = font.render(info_text, True, (255, 255, 0))
-        screen.blit(info_surface, (10, 10))
+        screen.blit(info_surface, (15, 15))
 
     # --- Clique nos botões ---
     def handle_click(self, pos):
@@ -345,8 +351,6 @@ class FinalLevel:
                 return "restart_level1"
             if self.quit_button_rect and self.quit_button_rect.collidepoint(pos):
                 return "quit_game"
-
         elif self.game_over and self.restart_to_level1_button_rect and self.restart_to_level1_button_rect.collidepoint(pos):
             return "restart_level1"
-
         return None
