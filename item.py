@@ -5,11 +5,10 @@ class Item(pygame.sprite.Sprite):
     """Floating collectible item that affects player's gravity."""
 
     ITEMS = {
-        # Bad items (increase gravity)
         'hamburguer': {'image': 'Hamburguer.png', 'effect': 0.25},
         'refrigerante': {'image': 'Refrigerante.png', 'effect': 0.5},
         'sorvete': {'image': 'Sorvete.png', 'effect': 0.15},
-        # Good items (decrease gravity)
+   
         'maca': {'image': 'Maçã.png', 'effect': -0.25},
         'alface': {'image': 'Alface.png', 'effect': -0.18},
         'banana': {'image': 'Banana.png', 'effect': -0.12}
@@ -20,7 +19,7 @@ class Item(pygame.sprite.Sprite):
 
         # Validate item type
         if item_type not in self.ITEMS:
-            # Se for um item inválido, usamos um fallback seguro (item ruim)
+            
             print(f"AVISO: Tipo de item desconhecido ('{item_type}'). Usando hambúrguer como fallback.")
             item_type = 'hamburguer' 
 
@@ -42,11 +41,11 @@ class Item(pygame.sprite.Sprite):
         image_path = f'assets/item/{self.ITEMS[item_type]["image"]}'
         
         try:
-            # Tenta carregar a imagem real
+
             raw_image = pygame.image.load(image_path).convert_alpha()
             self.image = pygame.transform.scale(raw_image, size)
         except pygame.error as e:
-            # Se falhar (formato inválido, arquivo ausente, etc.), o self.image continua sendo o placeholder
+
             print(f"ERRO DE CARREGAMENTO: Não foi possível carregar o asset '{image_path}'. Usando placeholder. Motivo: {e}")
 
         self.rect = self.image.get_rect(topleft=pos)
@@ -59,12 +58,11 @@ class Item(pygame.sprite.Sprite):
         self.float_direction = 1
 
     def is_good_item(self):
-        """Return True if this is a good item (reduces gravity)."""
         return self.gravity_effect < 0
 
     def update(self):
-        """Animate floating movement."""
-        # Floating movement (mantido da sua versão original)
+     
+    
         self.float_y += self.float_speed * self.float_direction
 
         if abs(self.float_y - self.base_y) >= self.float_range:

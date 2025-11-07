@@ -130,7 +130,6 @@ class Player(pygame.sprite.Sprite):
             self.fall_start_y = self.rect.bottom
 
     def animate(self):
-        """Controla o estado de animação."""
         if self.fat_mode:
             # Quando em modo "gordo", fixa sprite
             self.image = self.fat_image if self.facing_right else pygame.transform.flip(self.fat_image, True, False)
@@ -166,7 +165,7 @@ class Player(pygame.sprite.Sprite):
             self.good_items_collected += 1
         else:
             self.bad_items_collected += 1
-            # --- Ativa modo 'gordo' ---
+       
             self.fat_mode = True
             self.fat_mode_timer = pygame.time.get_ticks()
 

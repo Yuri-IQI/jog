@@ -1,58 +1,195 @@
 import pygame
 import random
+import math
 from player import Player
 from item import Item
+from PIL import Image
 
-# --- Constantes Globais ---
+# --- Constantes ---
 SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 600
-TILE_SIZE = 40
+TILE_COLUMNS = 25
+TILE_ROWS = 28
+TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
+SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
+ITEM_SIZE = TILE_SIZE * 0.8
 
 
+# --- Classe PowerUp (armadura + laser forte) ---
+class PowerUp(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__()
+        try:
+            image = pygame.image.load("assets/item/powerup.png").convert_alpha()
+            self.image = pygame.transform.scale(image, (40, 40))
+        except Exception:
+            self.image = pygame.Surface((40, 40))
+            self.image.fill((0, 200, 255))
+        self.rect = self.image.get_rect(center=pos)
+        self.velocity_y = 3
+
+    def update(self):
+        self.rect.y += self.velocity_y
+        if self.rect.bottom > SCREEN_HEIGHT - TILE_SIZE:
+            self.rect.bottom = SCREEN_HEIGHT - TILE_SIZE
+
+
+# --- Classe Boss ---
 class Boss(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__()
         try:
-            image = pygame.image.load("assets/item/boss.png").convert_alpha()
-            self.image = pygame.transform.scale(image, (120, 120))
+            self.image_right = pygame.image.load("assets/player/Boss.png").convert_alpha()
+            self.image_left = pygame.image.load("assets/player/Boss2.png").convert_alpha()
+            self.image_right = pygame.transform.scale(self.image_right, (120, 120))
+            self.image_left = pygame.transform.scale(self.image_left, (120, 120))
+            self.image = self.image_right
         except Exception:
             self.image = pygame.Surface((120, 120))
             self.image.fill((150, 0, 0))
+            self.image_left = self.image
+            self.image_right = self.image
+
         self.rect = self.image.get_rect(center=pos)
-        self.health = 300
-        self.max_health = 300
+        self.health = 900
+        self.max_health = 900
         self.last_shot_time = 0
-        self.shoot_interval = 4000  # 4 segundos
+        self.shoot_interval = 1000
+        self.direction_x = 1
+        self.direction_y = 1
+        self.speed_x = 3
+        self.speed_y = 2
+        self.rage_mode = False
+        self.damage_counter = 0
+        self.dead = False
+
+        # --- explosão GIF ---
+        self.explosion_frames = []
+        self.explosion_index = 0
+        self.explosion_timer = 0
+        self.explosion_duration = 80  # ms por frame
+        self.load_explosion_gif("assets/backgrounds/effects/boom-explosion.gif")
+
+    def load_explosion_gif(self, path):
+        """Carrega frames de um GIF animado"""
+        try:
+            gif = Image.open(path)
+            for frame in range(gif.n_frames):
+                gif.seek(frame)
+                frame_surface = pygame.image.fromstring(
+                    gif.convert("RGBA").tobytes(), gif.size, "RGBA"
+                )
+                frame_surface = pygame.transform.scale(frame_surface, (150, 150))
+                self.explosion_frames.append(frame_surface)
+        except Exception as e:
+            print(f"Erro ao carregar GIF de explosão: {e}")
+            surf = pygame.Surface((120, 120), pygame.SRCALPHA)
+            pygame.draw.circle(surf, (255, 120, 0), (60, 60), 50)
+            self.explosion_frames = [surf] * 6
+
+    def move(self):
+        if self.dead:
+            return
+        self.rect.x += self.direction_x * self.speed_x
+        self.rect.y += self.direction_y * self.speed_y
+
+        if self.rect.right >= SCREEN_WIDTH - 50 or self.rect.left <= 50:
+            self.direction_x *= -1
+            self.image = self.image_right if self.direction_x > 0 else self.image_left
+
+        if self.rect.top <= 40 or self.rect.bottom >= SCREEN_HEIGHT - 120:
+            self.direction_y *= -1
 
     def shoot(self, projectiles):
+        if self.dead:
+            return
         now = pygame.time.get_ticks()
         if now - self.last_shot_time >= self.shoot_interval:
             self.last_shot_time = now
-            bad_food = random.choice(['hamburguer', 'refrigerante', 'sorvete'])
-            projectile = Item(
-                (self.rect.centerx, self.rect.centery + 20),
-                (TILE_SIZE, TILE_SIZE),
-                bad_food
-            )
-            projectile.direction = -1  # sempre em direção ao jogador
-            projectile.speed = 6
-            projectiles.add(projectile)
+            num_shots = random.randint(8, 12) if self.rage_mode else random.randint(5, 8)
+            for _ in range(num_shots):
+                bad_food = random.choice(['hamburguer', 'refrigerante', 'sorvete'])
+                projectile = Item(
+                    (self.rect.centerx, self.rect.centery),
+                    (TILE_SIZE, TILE_SIZE),
+                    bad_food
+                )
+                angle = random.uniform(0, 2 * math.pi)
+                projectile.vx = math.cos(angle) * (6 if self.rage_mode else 5)
+                projectile.vy = math.sin(angle) * (6 if self.rage_mode else 5)
+                projectiles.add(projectile)
 
     def take_damage(self, amount):
+        if self.dead:
+            return None
         self.health = max(0, self.health - amount)
+        self.damage_counter += 1
+        drop_item = None
+        if self.damage_counter >= 4:
+            self.damage_counter = 0
+            drop_item = PowerUp((self.rect.centerx, self.rect.bottom))
+        if not self.rage_mode and self.health <= self.max_health / 2:
+            self.activate_rage_mode()
+        if self.health <= 0:
+            self.dead = True
+        return drop_item
 
-    def is_dead(self):
-        return self.health <= 0
+    def activate_rage_mode(self):
+        self.rage_mode = True
+        self.speed_x = 5
+        self.speed_y = 4
+        self.shoot_interval = 900
+        tinted = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+        tinted.fill((255, 50, 50, 100))
+        self.image.blit(tinted, (0, 0))
+
+    def update_explosion(self):
+       
+        if not self.dead:
+            return False
+        now = pygame.time.get_ticks()
+        if now - self.explosion_timer > self.explosion_duration:
+            self.explosion_timer = now
+            if self.explosion_index < len(self.explosion_frames):
+                self.image = self.explosion_frames[self.explosion_index]
+                self.explosion_index += 1
+            else:
+                return True 
+        return False
+
+    def activate_rage_mode(self):
+        self.rage_mode = True
+        self.speed_x = 5
+        self.speed_y = 4
+        self.shoot_interval = 900
+        tinted = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+        tinted.fill((255, 50, 50, 100))
+        self.image.blit(tinted, (0, 0))
+
+    def update_explosion(self):
+        if not self.dead:
+            return False
+        now = pygame.time.get_ticks()
+        if now - self.explosion_timer > 100:
+            self.explosion_timer = now
+            if self.explosion_index < len(self.explosion_frames):
+                self.image = self.explosion_frames[self.explosion_index]
+                self.explosion_index += 1
+            else:
+                return True 
+        return False
 
 
+# --- Classe Laser ---
 class Laser(pygame.sprite.Sprite):
-    """Tiro do jogador (laser F)."""
-    def __init__(self, pos):
+    def __init__(self, pos, sound=None, strong=False):
         super().__init__()
-        self.image = pygame.Surface((10, 4))
-        self.image.fill((0, 255, 0))
+        self.image = pygame.Surface((12 if strong else 8, 4))
+        self.image.fill((255, 255, 0) if strong else (0, 255, 0))
         self.rect = self.image.get_rect(midleft=pos)
         self.speed = 8
+        self.damage = 40 if strong else 20
+        if sound:
+            sound.play()
 
     def update(self):
         self.rect.x += self.speed
@@ -60,36 +197,52 @@ class Laser(pygame.sprite.Sprite):
             self.kill()
 
 
+# --- Classe BossLevel ---
 class BossLevel:
     def __init__(self):
         self.level_number = 4
         self.game_over = False
         self.game_won = False
 
-        # Sprites
-        self.player = pygame.sprite.GroupSingle(Player((80, SCREEN_HEIGHT - 100), size=(TILE_SIZE, TILE_SIZE)))
+        self.player = pygame.sprite.GroupSingle(Player((80, SCREEN_HEIGHT - 180), size=(TILE_SIZE, TILE_SIZE)))
         self.tiles = pygame.sprite.Group()
-        self.items = pygame.sprite.Group()
-        self.boss = pygame.sprite.GroupSingle(Boss((SCREEN_WIDTH - 150, SCREEN_HEIGHT - 150)))
+        self.boss = pygame.sprite.GroupSingle(Boss((SCREEN_WIDTH - 250, SCREEN_HEIGHT - 300)))
         self.projectiles = pygame.sprite.Group()
         self.lasers = pygame.sprite.Group()
+        self.powerups = pygame.sprite.Group()
 
-        # Fundo e música
         self.background_image = None
         self.victory_image = None
         self.gameover_image = None
+        self.tile_images = []
         self.load_images()
         self.start_music()
 
-        # Botões
         self.restart_button_rect = None
         self.quit_button_rect = None
 
-        # Vidas do jogador
         self.max_lives = 5
         self.player_lives = self.max_lives
+        self.armor_hits = 0
+        self.power_end_time = 0
+        self.strong_laser = False
 
-    # --- Imagens ---
+        try:
+            self.laser_sound = pygame.mixer.Sound("assets/backgrounds/audio/laser-fire.mp3")
+            self.laser_sound.set_volume(0.4)
+        except Exception:
+            self.laser_sound = None
+
+        self.build_floor()
+
+    def build_floor(self):
+        floor_y = SCREEN_HEIGHT - TILE_SIZE
+        for x in range(0, SCREEN_WIDTH, TILE_SIZE):
+            tile = pygame.sprite.Sprite()
+            tile.image = random.choice(self.tile_images)
+            tile.rect = tile.image.get_rect(topleft=(x, floor_y))
+            self.tiles.add(tile)
+
     def load_images(self):
         try:
             bg = pygame.image.load("assets/backgrounds/fase4.jpg").convert()
@@ -112,9 +265,23 @@ class BossLevel:
             self.gameover_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.gameover_image.fill((120, 0, 0))
 
-    # --- Música ---
+        tile_paths = [
+            "assets/tiles/Terreno 01.png",
+            "assets/tiles/Terreno 02.png",
+            "assets/tiles/Terreno 03.png",
+        ]
+        for path in tile_paths:
+            try:
+                img = pygame.image.load(path).convert_alpha()
+                img = pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE))
+                self.tile_images.append(img)
+            except Exception:
+                surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                surf.fill((80, 40, 0))
+                self.tile_images.append(surf)
+
     def start_music(self):
-        path = "assets/backgrounds/boss_theme.mp3"
+        path = "assets/backgrounds/audio/TrilhaSonora4.mp3"
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
@@ -124,7 +291,6 @@ class BossLevel:
         except Exception:
             pass
 
-    # --- Atualização ---
     def update(self):
         if self.game_over or self.game_won:
             return
@@ -132,7 +298,6 @@ class BossLevel:
         player = self.player.sprite
         boss = self.boss.sprite
 
-        # Movimento do jogador
         player.update()
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -141,113 +306,143 @@ class BossLevel:
             player.direction.x = 1
         else:
             player.direction.x = 0
+        if keys[pygame.K_SPACE] and player.on_ground:
+            player.jump()
         if keys[pygame.K_f]:
             self.shoot_laser()
 
-        # Atualizações gerais
         player.rect.x += player.direction.x * player.speed
+
+        # mantém dentro da tela
+        if player.rect.left < 0:
+            player.rect.left = 0
+        elif player.rect.right > SCREEN_WIDTH:
+            player.rect.right = SCREEN_WIDTH
+
         player.apply_gravity()
-        self.projectiles.update()
-        self.lasers.update()
+        self.check_floor_collision(player)
+
+        boss.move()
         boss.shoot(self.projectiles)
 
-        # Colisões
+        for proj in self.projectiles:
+            proj.rect.x += getattr(proj, "vx", 0)
+            proj.rect.y += getattr(proj, "vy", 0)
+        self.lasers.update()
+        self.powerups.update()
+
         self.check_projectile_collisions()
         self.check_laser_hits()
+        self.check_powerup_collect()
 
-        # Fim de jogo
+        if pygame.time.get_ticks() > self.power_end_time:
+            self.armor_hits = 0
+            self.strong_laser = False
+
+        # explosão e fim de jogo
+        if boss.dead:
+            finished = boss.update_explosion()
+            if finished:
+                self.game_won = True
+                pygame.mixer.music.stop()
         if self.player_lives <= 0:
             self.game_over = True
             pygame.mixer.music.stop()
-        if boss.is_dead():
-            self.game_won = True
-            pygame.mixer.music.stop()
 
-    # --- Dispara laser ---
+    def check_floor_collision(self, player):
+        for tile in self.tiles:
+            if player.rect.colliderect(tile.rect):
+                player.rect.bottom = tile.rect.top
+                player.direction.y = 0
+                player.on_ground = True
+                return
+        player.on_ground = False
+
     def shoot_laser(self):
         player = self.player.sprite
-        if len(self.lasers) < 3:  # limita spam
-            laser = Laser((player.rect.right, player.rect.centery))
+        if len(self.lasers) < 3:
+            laser = Laser((player.rect.right, player.rect.centery), self.laser_sound, strong=self.strong_laser)
             self.lasers.add(laser)
 
-    # --- Colisões ---
     def check_projectile_collisions(self):
         player = self.player.sprite
         collided = pygame.sprite.spritecollide(player, self.projectiles, True)
         for _ in collided:
-            self.player_lives -= 1
-            if self.player_lives < 0:
-                self.player_lives = 0
+            if self.armor_hits > 0:
+                self.armor_hits -= 1
+            else:
+                self.player_lives -= 1
+                if self.player_lives < 0:
+                    self.player_lives = 0
 
     def check_laser_hits(self):
         boss = self.boss.sprite
         hits = pygame.sprite.spritecollide(boss, self.lasers, True)
         for _ in hits:
-            boss.take_damage(20)
+            dropped = boss.take_damage(40 if self.strong_laser else 20)
+            if dropped:
+                self.powerups.add(dropped)
 
-    # --- Renderização ---
+    def check_powerup_collect(self):
+        player = self.player.sprite
+        collected = pygame.sprite.spritecollide(player, self.powerups, True)
+        for _ in collected:
+            self.armor_hits = 2
+            self.strong_laser = True
+            self.power_end_time = pygame.time.get_ticks() + 8000
+
     def draw(self, screen):
         if self.background_image:
             screen.blit(self.background_image, (0, 0))
 
+        self.tiles.draw(screen)
         self.player.draw(screen)
-        self.boss.draw(screen)
         self.projectiles.draw(screen)
         self.lasers.draw(screen)
+        self.powerups.draw(screen)
+        self.boss.draw(screen)
 
         font = pygame.font.Font(None, 36)
         boss = self.boss.sprite
 
-        # --- Barra de Vida do Boss ---
-        pygame.draw.rect(screen, (0, 0, 0, 150), (10, 10, 580, 25))
         pygame.draw.rect(screen, (255, 0, 0), (10, 10, boss.health / boss.max_health * 580, 25))
         hp_text = font.render(f"Boss HP: {boss.health}", True, (255, 255, 255))
         screen.blit(hp_text, (15, 12))
 
-        # --- Vidas do Jogador ---
-        life_text = font.render(f"Vidas: {self.player_lives}/{self.max_lives}", True, (255, 255, 0))
+        life_text = font.render(
+            f"Vidas: {self.player_lives}/{self.max_lives} | Armadura: {self.armor_hits} | Laser Forte: {'Sim' if self.strong_laser else 'Não'}",
+            True, (255, 255, 0)
+        )
         screen.blit(life_text, (10, 45))
 
-        # --- Vitória ---
         if self.game_won:
             screen.blit(self.victory_image, (0, 0))
-            button_width, button_height = 260, 60
-            spacing = 30
-            total_width = button_width * 2 + spacing
-            start_x = (SCREEN_WIDTH - total_width) // 2
-            y = SCREEN_HEIGHT - 150
-            self.restart_button_rect = pygame.Rect(start_x, y, button_width, button_height)
-            self.quit_button_rect = pygame.Rect(start_x + button_width + spacing, y, button_width, button_height)
-            pygame.draw.rect(screen, (0, 0, 0, 180), self.restart_button_rect, border_radius=10)
-            pygame.draw.rect(screen, (255, 255, 255), self.restart_button_rect, 3, border_radius=10)
-            pygame.draw.rect(screen, (0, 0, 0, 180), self.quit_button_rect, border_radius=10)
-            pygame.draw.rect(screen, (255, 255, 255), self.quit_button_rect, 3, border_radius=10)
-            screen.blit(font.render("Recomeçar", True, (255, 255, 255)),
-                        self.restart_button_rect.move(40, 15))
-            screen.blit(font.render("Sair do Jogo", True, (255, 255, 255)),
-                        self.quit_button_rect.move(35, 15))
-            return
-
-        # --- Game Over ---
-        if self.game_over:
+            self.draw_buttons(screen, font)
+        elif self.game_over:
             screen.blit(self.gameover_image, (0, 0))
-            button_w, button_h = 280, 60
-            x = (SCREEN_WIDTH - button_w) // 2
-            y = SCREEN_HEIGHT - 150
-            self.restart_button_rect = pygame.Rect(x, y, button_w, button_h)
-            pygame.draw.rect(screen, (0, 0, 0, 180), self.restart_button_rect, border_radius=10)
-            pygame.draw.rect(screen, (255, 255, 255), self.restart_button_rect, 3, border_radius=10)
-            screen.blit(font.render("Recomeçar do Nível 1", True, (255, 255, 255)),
-                        self.restart_button_rect.move(20, 15))
-            return
+            self.draw_buttons(screen, font)
 
-    # --- Clique nos botões ---
+    def draw_buttons(self, screen, font):
+        button_w, button_h = 260, 60
+        spacing = 30
+        total_w = button_w * 2 + spacing
+        start_x = (SCREEN_WIDTH - total_w) // 2
+        y = SCREEN_HEIGHT - 150
+
+        self.restart_button_rect = pygame.Rect(start_x, y, button_w, button_h)
+        self.quit_button_rect = pygame.Rect(start_x + button_w + spacing, y, button_w, button_h)
+
+        pygame.draw.rect(screen, (0, 0, 0, 180), self.restart_button_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.restart_button_rect, 3, border_radius=10)
+        screen.blit(font.render("Recomeçar", True, (255, 255, 255)), self.restart_button_rect.move(45, 15))
+
+        pygame.draw.rect(screen, (0, 0, 0, 180), self.quit_button_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.quit_button_rect, 3, border_radius=10)
+        screen.blit(font.render("Sair do Jogo", True, (255, 255, 255)), self.quit_button_rect.move(45, 15))
+
     def handle_click(self, pos):
-        if self.game_won:
-            if self.restart_button_rect and self.restart_button_rect.collidepoint(pos):
-                return "restart_level1"
-            if self.quit_button_rect and self.quit_button_rect.collidepoint(pos):
-                return "quit_game"
-        elif self.game_over and self.restart_button_rect and self.restart_button_rect.collidepoint(pos):
+        if self.restart_button_rect and self.restart_button_rect.collidepoint(pos):
             return "restart_level1"
+        if self.quit_button_rect and self.quit_button_rect.collidepoint(pos):
+            return "quit_game"
         return None

@@ -37,7 +37,7 @@ class Level3:
 
         # Layout e jogador
         self.layout = self.get_layout()
-        self.normalize_layout()  # <-- garante largura igual em todas as linhas
+        self.normalize_layout()  
         spawn_pos = self.find_spawn_point()
         self.player = pygame.sprite.GroupSingle(Player(spawn_pos, size=(TILE_SIZE, TILE_SIZE)))
 
@@ -56,13 +56,13 @@ class Level3:
      return [
         "XXXXXXXXXXX   XXXXXXXXXXX",
         "X     X         X     X X",
-        "X XXX X XXXXXXX X XXX X X",
+        "X XXX X XX XXXX X XXX X X",
         "X X   X     X     X   X X",
         "X X X       XXXX XXXXX X ",
         "X X     X   X   X     X X",
-        "X XXXXX XXX X XXX XXXXX X",
+        "X X   X X   X XXX XXXXX X",
         "X     X X   X   X X     X",
-        "XXXXX X       X X X XXXXX",
+        "XXX   X       X X X XXXXX",
         "X     X X     X X X     X",
         "X XXXXX            XXXX X",
         "X X     X   X X     X   X",
@@ -106,7 +106,7 @@ class Level3:
 
     # --- Carrega imagens ---
     def load_images(self):
-        # Fundo
+       
         try:
             raw_bg = pygame.image.load("assets/backgrounds/fase3.jpg").convert()
             self.background_image = pygame.transform.scale(raw_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -114,7 +114,7 @@ class Level3:
             self.background_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.background_image.fill((30, 0, 40))
 
-        # Vitória
+     
         try:
             raw_victory = pygame.image.load("assets/backgrounds/victory.png").convert_alpha()
             self.victory_image = pygame.transform.scale(raw_victory, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -122,7 +122,7 @@ class Level3:
             self.victory_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.victory_image.fill((0, 100, 0))
 
-        # Game Over
+      
         try:
             raw_gameover = pygame.image.load("assets/backgrounds/gameover.jpg").convert_alpha()
             self.gameover_image = pygame.transform.scale(raw_gameover, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -151,7 +151,7 @@ class Level3:
             fallback.fill((80, 40, 0))
             self.tile_images = [fallback]
 
-        # Canhões
+      
         try:
             cannon_img = pygame.image.load("assets/item/canhao.png").convert_alpha()
             self.cannon_image = pygame.transform.scale(cannon_img, (TILE_SIZE, TILE_SIZE))
@@ -161,7 +161,7 @@ class Level3:
 
     # --- Música ---
     def start_music(self):
-        music_path = "assets/backgrounds/Korea.mp3"
+        music_path = "assets/backgrounds/audio/trilha sonora3.mp3"
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
@@ -331,14 +331,14 @@ class Level3:
             start_x = (SCREEN_WIDTH - total_width) // 2
             button_y = SCREEN_HEIGHT - 150
 
-            # Botão de Recomeçar
+        
             self.restart_to_level1_button_rect = pygame.Rect(start_x, button_y, button_width, button_height)
             pygame.draw.rect(screen, (0, 0, 0, 180), self.restart_to_level1_button_rect, border_radius=10)
             pygame.draw.rect(screen, (255, 255, 255), self.restart_to_level1_button_rect, 3, border_radius=10)
             restart_text = font.render("Recomeçar", True, (255, 255, 255))
             screen.blit(restart_text, restart_text.get_rect(center=self.restart_to_level1_button_rect.center))
 
-            # --- NOVO: botão para Fase 4 (Boss) ---
+        
             self.next_level_button_rect = pygame.Rect(start_x + button_width + spacing, button_y, button_width, button_height)
             pygame.draw.rect(screen, (0, 0, 0, 180), self.next_level_button_rect, border_radius=10)
             pygame.draw.rect(screen, (255, 255, 255), self.next_level_button_rect, 3, border_radius=10)

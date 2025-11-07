@@ -2,17 +2,21 @@ import pygame
 import sys
 from level import Level, SCREEN_WIDTH, SCREEN_HEIGHT
 from level3 import Level3
-from level4 import BossLevel  # Fase 4 (Boss)
+from level4 import BossLevel 
 
 # Inicializa o pygame
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Platformer Game")
+pygame.display.set_caption("Based")
 clock = pygame.time.Clock()
 
 # --- Controle global de nível ---
-current_level_number = 1
-level = Level(current_level_number)
+# current_level_number = 1
+# level = Level(current_level_number)
+
+current_level_number = 4
+level = BossLevel()
+
 
 
 def load_level(level_number):
@@ -36,7 +40,7 @@ while True:
             pygame.quit()
             sys.exit()
 
-        # --- Clique nos botões da interface ---
+
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             action = level.handle_click(event.pos)
 
@@ -44,17 +48,17 @@ while True:
                 level = load_level(current_level_number)
 
             elif action == "next" or action == "next_level":
-                # Próximo nível
+          
                 current_level_number += 1
                 level = load_level(current_level_number)
 
             elif action == "restart_level1":
-                # Reinicia o jogo completamente
+          
                 current_level_number = 1
                 level = load_level(current_level_number)
 
             elif action == "quit_game":
-                # Sai do jogo (opcional no boss)
+               
                 if pygame.mixer.get_init():
                     pygame.mixer.music.stop()
                 pygame.quit()

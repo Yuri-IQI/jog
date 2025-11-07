@@ -18,22 +18,21 @@ class Level:
         self.game_won = False
         self.game_over = False
 
-        # Imagens
+       
         self.background_image = None
         self.victory_image = None
         self.gameover_image = None
 
-        # Botões
+        
         self.restart_button_rect = None
         self.next_level_button_rect = None
         self.restart_to_level1_button_rect = None
 
-        # Layout e grupos
         self.layout = self.get_layout(level_number)
         self.tiles = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
 
-        # Cria jogador
+        
         spawn_pos = self.find_spawn_point()
         self.player = pygame.sprite.GroupSingle(Player(spawn_pos, size=(TILE_SIZE, TILE_SIZE)))
 
@@ -77,19 +76,19 @@ class Level:
         else:
             # Level 2 – mais difícil
             return [
-                "                         ",
-                "      XXXX               ",
-                "            XX           ",
-                "   XXXX   XXXX           ",
-                "                         ",
-                " XXXXXXX       XXXX      ",
-                "                         ",
-                " XX     XXXXX            ",
-                "                         ",
-                "   XXXXXXXX   XXXX       ",
-                "                         ",
-                "  XX    XX               ",
-                "                         ",
+                "                           ",
+                "XXXXXXXXXXXXXXX          XX",
+                "X           XX   XXXX     X",
+                "X   XXXX   XXXX     XXXXXXX",
+                "X           XX            X",
+                "X XXXXXXX       XXXXXXX   X",
+                "X               X        XX",
+                "X XX     XXXXX    XXXXX   X",
+                "                           ",
+                "   XXXXXXXX   XXXX   XXX   ",
+                "            X        XX    ",
+                "  XX    XX    XX           ",
+                "                   XX      ",
                 " XXXXXXXX   XXXX         ",
                 "                         ",
                 "       XX        XX      ",
@@ -115,7 +114,7 @@ class Level:
 
     # --- Carrega imagens corretas para cada nível ---
     def load_images(self):
-        # Imagens de fundo e vitória específicas por nível
+    
         bg_paths = {
             1: "assets/backgrounds/fase1.jpg",
             2: "assets/backgrounds/fase2.jpg"
@@ -205,7 +204,7 @@ class Level:
                           ['sorvete'] * 1 + ['maca'] * 8 +
                           ['alface'] * 3 + ['banana'] * 3)
         else:
-            # Level 2 tem mais itens ruins
+           
             item_types = (['hamburguer'] * 4 + ['refrigerante'] * 8 +
                           ['sorvete'] * 4 + ['maca'] * 5 +
                           ['alface'] * 2 + ['banana'] * 2 +
@@ -246,7 +245,7 @@ class Level:
             self.restart_game()
             return
 
-        # Escapou pelo topo
+       
         if player.rect.bottom < 0:
             self.game_won = True
             pygame.mixer.music.stop()
@@ -320,14 +319,14 @@ class Level:
             start_x = (SCREEN_WIDTH - total_width) // 2
             button_y = SCREEN_HEIGHT - 150
 
-            # Recomeçar
+         
             self.restart_button_rect = pygame.Rect(start_x, button_y, button_width, button_height)
             pygame.draw.rect(screen, (0, 0, 0, 180), self.restart_button_rect, border_radius=10)
             pygame.draw.rect(screen, (255, 255, 255), self.restart_button_rect, 3, border_radius=10)
             restart_text = font.render("Recomeçar", True, (255, 255, 255))
             screen.blit(restart_text, restart_text.get_rect(center=self.restart_button_rect.center))
 
-            # --- NOVO: botão de próximo nível para 1 e 2 ---
+       
             if self.level_number in [1, 2]:
                 self.next_level_button_rect = pygame.Rect(
                     start_x + button_width + spacing, button_y, button_width, button_height
