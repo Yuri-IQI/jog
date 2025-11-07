@@ -117,16 +117,16 @@ class Level:
     def load_images(self):
         # Imagens de fundo e vitória específicas por nível
         bg_paths = {
-            1: "assets/backgrounds/mao.jpeg",
-            2: "assets/backgrounds/assad.jpeg"
+            1: "assets/backgrounds/fase1.jpg",
+            2: "assets/backgrounds/fase2.jpg"
         }
 
         victory_paths = {
-            1: "assets/backgrounds/won.jpg",
-            2: "assets/backgrounds/assad.jpeg.png"
+            1: "assets/backgrounds/victory.png",
+            2: "assets/backgrounds/victory.png"
         }
 
-        gameover_path = "assets/backgrounds/gameover.jpeg"
+        gameover_path = "assets/backgrounds/gameover.jpg"
 
         # --- Fundo ---
         try:
@@ -176,8 +176,8 @@ class Level:
     # --- Música por nível ---
     def start_music(self):
         music_paths = {
-            1: "assets/backgrounds/hong-kong-97.mp3",
-            2: "assets/backgrounds/assad.mp3"
+            1: "assets/backgrounds/audio/hong-kong-97.mp3",
+            2: "assets/backgrounds/audio/Dreamscape.mp3"
         }
 
         if not pygame.mixer.get_init():
@@ -295,7 +295,7 @@ class Level:
             player.collect_item(item)
             if self.level_number == 2 and item.type in ['sorvete', 'refrigerante', 'hamburguer']:
                 player.bad_items_collected += 1
-            if player.bad_items_collected >= 4:
+            if player.bad_items_collected >= 8:
                 self.game_over = True
                 pygame.mixer.music.stop()
                 break
