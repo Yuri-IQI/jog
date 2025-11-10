@@ -13,18 +13,21 @@ TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
 ITEM_SIZE = TILE_SIZE * 0.8
 
-
-# --- Classe PowerUp (armadura + laser forte) ---
 class PowerUp(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__()
         try:
-            image = pygame.image.load("assets/item/powerup.png").convert_alpha()
+            image = pygame.image.load("assets/item/GarrafaDagua.png").convert_alpha()
+            image2 = pygame.image.load("assets/item/Halteres.png").convert_alpha()
             self.image = pygame.transform.scale(image, (40, 40))
+            self.image2 = pygame.transform.scale(image, (40, 40))
         except Exception:
             self.image = pygame.Surface((40, 40))
+            self.image2 = pygame.Surface((40, 40))
             self.image.fill((0, 200, 255))
+            self.image2.fill((0, 200, 255))
         self.rect = self.image.get_rect(center=pos)
+        self.rect = self.image2.get_rect(center=pos)
         self.velocity_y = 3
 
     def update(self):
@@ -33,7 +36,6 @@ class PowerUp(pygame.sprite.Sprite):
             self.rect.bottom = SCREEN_HEIGHT - TILE_SIZE
 
 
-# --- Classe Boss ---
 class Boss(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__()
@@ -62,15 +64,14 @@ class Boss(pygame.sprite.Sprite):
         self.damage_counter = 0
         self.dead = False
 
-        # --- explosão GIF ---
+  
         self.explosion_frames = []
         self.explosion_index = 0
         self.explosion_timer = 0
-        self.explosion_duration = 80  # ms por frame
+        self.explosion_duration = 80  
         self.load_explosion_gif("assets/backgrounds/effects/boom-explosion.gif")
 
     def load_explosion_gif(self, path):
-        """Carrega frames de um GIF animado"""
         try:
             gif = Image.open(path)
             for frame in range(gif.n_frames):
@@ -179,14 +180,14 @@ class Boss(pygame.sprite.Sprite):
         return False
 
 
-# --- Classe Laser ---
+
 class Laser(pygame.sprite.Sprite):
     def __init__(self, pos, sound=None, strong=False):
         super().__init__()
         self.image = pygame.Surface((12 if strong else 8, 4))
         self.image.fill((255, 255, 0) if strong else (0, 255, 0))
         self.rect = self.image.get_rect(midleft=pos)
-        self.speed = 8
+        self.speed = 10
         self.damage = 40 if strong else 20
         if sound:
             sound.play()
@@ -197,7 +198,7 @@ class Laser(pygame.sprite.Sprite):
             self.kill()
 
 
-# --- Classe BossLevel ---
+
 class BossLevel:
     def __init__(self):
         self.level_number = 4
@@ -339,7 +340,6 @@ class BossLevel:
             self.armor_hits = 0
             self.strong_laser = False
 
-        # explosão e fim de jogo
         if boss.dead:
             finished = boss.update_explosion()
             if finished:

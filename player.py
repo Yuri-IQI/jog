@@ -51,7 +51,6 @@ class Player(pygame.sprite.Sprite):
         self.last_tick = pygame.time.get_ticks()
 
     def import_character_assets(self):
-        """Carrega sprites e define imagem de 'gordo'."""
         path = 'assets/player/'
         
         fallback_image = pygame.Surface(self.size, pygame.SRCALPHA)
@@ -149,7 +148,6 @@ class Player(pygame.sprite.Sprite):
         self.image = image if self.facing_right else pygame.transform.flip(image, True, False)
 
     def update(self):
-        """Atualiza o jogador e o temporizador do modo 'gordo'."""
         self.get_input()
         self.animate()
 
@@ -160,7 +158,6 @@ class Player(pygame.sprite.Sprite):
         self.last_tick = now
 
     def collect_item(self, item):
-        """Aplica efeito de gravidade e ativa sprite 'gordo' se item for ruim."""
         if item.is_good_item():
             self.good_items_collected += 1
         else:

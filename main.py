@@ -1,10 +1,10 @@
 import pygame
 import sys
 from level import Level, SCREEN_WIDTH, SCREEN_HEIGHT
+from level2 import WaterLevel
 from level3 import Level3
 from level4 import BossLevel 
 
-# Inicializa o pygame
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Based")
@@ -14,15 +14,16 @@ clock = pygame.time.Clock()
 # current_level_number = 1
 # level = Level(current_level_number)
 
-current_level_number = 4
+current_level_number = 2
 level = BossLevel()
 
 
 
 def load_level(level_number):
-    """Carrega o nível correspondente."""
-    if level_number == 1 or level_number == 2:
-        return Level(level_number)
+    if level_number == 1: 
+        return Level()
+    elif level_number == 2:
+        return WaterLevel()
     elif level_number == 3:
         return Level3()
     elif level_number == 4:
@@ -64,7 +65,7 @@ while True:
                 pygame.quit()
                 sys.exit()
 
-    # --- Atualização e renderização ---
+
     level.update()
     screen.fill((50, 50, 150))
     level.draw(screen)

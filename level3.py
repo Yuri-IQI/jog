@@ -3,7 +3,7 @@ import random
 from player import Player
 from item import Item
 
-# --- Constantes Globais ---
+
 SCREEN_WIDTH = 600
 TILE_COLUMNS = 25
 TILE_ROWS = 28
@@ -18,24 +18,23 @@ class Level3:
         self.game_won = False
         self.game_over = False
 
-        # Sprites
+ 
         self.tiles = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
         self.cannons = pygame.sprite.Group()
         self.projectiles = pygame.sprite.Group()
 
-        # Imagens
+      
         self.background_image = None
         self.victory_image = None
         self.gameover_image = None
         self.tile_images = []
         self.cannon_image = None
 
-        # Botões
         self.restart_to_level1_button_rect = None
         self.quit_button_rect = None
 
-        # Layout e jogador
+      
         self.layout = self.get_layout()
         self.normalize_layout()  
         spawn_pos = self.find_spawn_point()
@@ -47,11 +46,11 @@ class Level3:
         self.place_cannons()
         self.start_music()
 
-        # Controle de tempo dos tiros
+      
         self.last_shot_time = 0
-        self.shot_interval = 1500  # milissegundos
-
-    # --- Layout ---
+        self.shot_interval = 1500  
+    
+    
     def get_layout(self):
      return [
         "XXXXXXXXXXX   XXXXXXXXXXX",
@@ -61,9 +60,9 @@ class Level3:
         "X X X       XXXX XXXXX X ",
         "X X     X   X   X     X X",
         "X X   X X   X XXX XXXXX X",
-        "X     X X   X   X X     X",
+        "X     X XX  X   X X     X",
         "XXX   X       X X X XXXXX",
-        "X     X X     X X X     X",
+        "X     X X X   X X X     X",
         "X XXXXX            XXXX X",
         "X X     X   X X     X   X",
         "X X XXXXX X XXXXXX X XXX ",
@@ -75,16 +74,16 @@ class Level3:
         "X   X X XXXXX XXXXXX X X ",
         "X X X X     X        X X ",
         "X X XXXXXXX X     XXX X X",
-        "X        X     X     X X ",
+        "X              X     X X ",
         "X XXXXXXX XXXXX X XXXXX X",
-        "X                   X   X",
+        "X                   X  X ",
         "XXX XXXXXXXXX X XXX X XXX",
-        "X      X X   X           ",
-        "X P X   XXX X XXX X XXXXX",
+        "X                        ",
+        "X P    XXX X XXX X XXXXX ",
         "XXXXXXXXXXXXXXXXXXXXXXXXX",
      ]
 
-    # --- Normaliza o layout (garante linhas iguais) ---
+
     def normalize_layout(self):
         max_length = max(len(row) for row in self.layout)
         normalized = []
@@ -96,7 +95,7 @@ class Level3:
             normalized.append(row)
         self.layout = normalized
 
-    # --- Spawn do jogador ---
+
     def find_spawn_point(self):
         for row_index, row in enumerate(self.layout):
             for col_index, cell in enumerate(row):
@@ -104,7 +103,6 @@ class Level3:
                     return (col_index * TILE_SIZE, row_index * TILE_SIZE)
         return (50, SCREEN_HEIGHT - TILE_SIZE * 4)
 
-    # --- Carrega imagens ---
     def load_images(self):
        
         try:
@@ -130,7 +128,6 @@ class Level3:
             self.gameover_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.gameover_image.fill((100, 0, 0))
 
-        # Tiles
         tile_paths = [
             "assets/tiles/Terreno 01.png",
             "assets/tiles/Terreno 02.png",
@@ -159,7 +156,7 @@ class Level3:
             self.cannon_image = pygame.Surface((TILE_SIZE, TILE_SIZE))
             self.cannon_image.fill((200, 0, 0))
 
-    # --- Música ---
+
     def start_music(self):
         music_path = "assets/backgrounds/audio/trilha sonora3.mp3"
         if not pygame.mixer.get_init():
@@ -171,7 +168,7 @@ class Level3:
         except Exception:
             pass
 
-    # --- Tiles ---
+
     def build_tiles(self):
         for row_index, row in enumerate(self.layout):
             for col_index, cell in enumerate(row):
@@ -181,7 +178,6 @@ class Level3:
                     tile.rect = tile.image.get_rect(topleft=(col_index * TILE_SIZE, row_index * TILE_SIZE))
                     self.tiles.add(tile)
 
-    # --- Itens ---
     def place_items(self):
         item_types = (['maca'] * 10 + ['alface'] * 7 + ['banana'] * 4 +
                       ['sorvete'] * 6 + ['hamburguer'] * 8 + ['refrigerante'] * 10)
@@ -205,7 +201,6 @@ class Level3:
                 item = Item(pos, (TILE_SIZE, TILE_SIZE), item_type)
                 self.items.add(item)
 
-    # --- Canhões ---
     def place_cannons(self):
         positions = [
             (60, 500, 1), (160, 500, 1), (260, 500, -1),
@@ -226,7 +221,6 @@ class Level3:
             cannon.direction = direction
             self.cannons.add(cannon)
 
-    # --- Disparo ---
     def shoot_from_cannons(self):
         now = pygame.time.get_ticks()
         if now - self.last_shot_time > self.shot_interval:
@@ -245,7 +239,6 @@ class Level3:
             if projectile.rect.right < 0 or projectile.rect.left > SCREEN_WIDTH:
                 projectile.kill()
 
-    # --- Atualização ---
     def update(self):
         if self.game_won or self.game_over:
             return
@@ -271,7 +264,6 @@ class Level3:
             self.game_won = True
             pygame.mixer.music.stop()
 
-    # --- Colisões ---
     def collision_horizontal(self, player):
         for tile in self.tiles:
             if player.rect.colliderect(tile.rect):
@@ -292,7 +284,6 @@ class Level3:
                     player.rect.top = tile.rect.bottom
                     player.direction.y = 0
 
-    # --- Itens e projéteis ---
     def check_item_collisions(self):
         player = self.player.sprite
         for item in pygame.sprite.spritecollide(player, self.items, True):
@@ -308,7 +299,6 @@ class Level3:
                 pygame.mixer.music.stop()
                 break
 
-        # --- Renderização ---
     def draw(self, screen):
         if self.background_image:
             screen.blit(self.background_image, (0, 0))
@@ -322,7 +312,6 @@ class Level3:
         font = pygame.font.Font(None, 36)
         player = self.player.sprite
 
-        # --- Vitória ---
         if self.game_won:
             screen.blit(self.victory_image, (0, 0))
             button_width, button_height = 260, 60
@@ -346,7 +335,6 @@ class Level3:
             screen.blit(next_text, next_text.get_rect(center=self.next_level_button_rect.center))
             return
 
-        # --- Game Over ---
         if self.game_over:
             screen.blit(self.gameover_image, (0, 0))
             button_width, button_height = 280, 60
@@ -355,11 +343,10 @@ class Level3:
             self.restart_to_level1_button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
             pygame.draw.rect(screen, (0, 0, 0, 180), self.restart_to_level1_button_rect, border_radius=10)
             pygame.draw.rect(screen, (255, 255, 255), self.restart_to_level1_button_rect, 3, border_radius=10)
-            restart_text = font.render("Recomeçar do Nível 1", True, (255, 255, 255))
+            restart_text = font.render("Recomeçar", True, (255, 255, 255))
             screen.blit(restart_text, restart_text.get_rect(center=self.restart_to_level1_button_rect.center))
             return
 
-        # --- HUD ---
         info_text = f"Vidas: {max(0, 3 - player.bad_items_collected)} | Fase 3"
         hud_bg = pygame.Surface((260, 40), pygame.SRCALPHA)
         hud_bg.fill((0, 0, 0, 160))
@@ -367,7 +354,6 @@ class Level3:
         info_surface = font.render(info_text, True, (255, 255, 0))
         screen.blit(info_surface, (15, 15))
 
-    # --- Clique nos botões ---
     def handle_click(self, pos):
         if self.game_won:
             if self.restart_to_level1_button_rect and self.restart_to_level1_button_rect.collidepoint(pos):
