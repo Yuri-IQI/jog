@@ -14,8 +14,8 @@ clock = pygame.time.Clock()
 # current_level_number = 1
 # level = Level(current_level_number)
 
-current_level_number = 2
-level = BossLevel()
+current_level_number = 3
+level = Level3()
 
 
 

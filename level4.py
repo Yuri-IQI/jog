@@ -5,13 +5,14 @@ from player import Player
 from item import Item
 from PIL import Image
 
-# --- Constantes ---
+
 SCREEN_WIDTH = 600
 TILE_COLUMNS = 25
 TILE_ROWS = 28
 TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
 ITEM_SIZE = TILE_SIZE * 0.8
+
 
 class PowerUp(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -20,7 +21,7 @@ class PowerUp(pygame.sprite.Sprite):
             image = pygame.image.load("assets/item/GarrafaDagua.png").convert_alpha()
             image2 = pygame.image.load("assets/item/Halteres.png").convert_alpha()
             self.image = pygame.transform.scale(image, (40, 40))
-            self.image2 = pygame.transform.scale(image, (40, 40))
+            self.image2 = pygame.transform.scale(image2, (40, 40))
         except Exception:
             self.image = pygame.Surface((40, 40))
             self.image2 = pygame.Surface((40, 40))
@@ -52,8 +53,8 @@ class Boss(pygame.sprite.Sprite):
             self.image_right = self.image
 
         self.rect = self.image.get_rect(center=pos)
-        self.health = 900
-        self.max_health = 900
+        self.health = 1800
+        self.max_health = 1800
         self.last_shot_time = 0
         self.shoot_interval = 1000
         self.direction_x = 1
@@ -64,11 +65,10 @@ class Boss(pygame.sprite.Sprite):
         self.damage_counter = 0
         self.dead = False
 
-  
         self.explosion_frames = []
         self.explosion_index = 0
         self.explosion_timer = 0
-        self.explosion_duration = 80  
+        self.explosion_duration = 80
         self.load_explosion_gif("assets/backgrounds/effects/boom-explosion.gif")
 
     def load_explosion_gif(self, path):
@@ -136,32 +136,9 @@ class Boss(pygame.sprite.Sprite):
 
     def activate_rage_mode(self):
         self.rage_mode = True
-        self.speed_x = 5
-        self.speed_y = 4
-        self.shoot_interval = 900
-        tinted = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
-        tinted.fill((255, 50, 50, 100))
-        self.image.blit(tinted, (0, 0))
-
-    def update_explosion(self):
-       
-        if not self.dead:
-            return False
-        now = pygame.time.get_ticks()
-        if now - self.explosion_timer > self.explosion_duration:
-            self.explosion_timer = now
-            if self.explosion_index < len(self.explosion_frames):
-                self.image = self.explosion_frames[self.explosion_index]
-                self.explosion_index += 1
-            else:
-                return True 
-        return False
-
-    def activate_rage_mode(self):
-        self.rage_mode = True
-        self.speed_x = 5
-        self.speed_y = 4
-        self.shoot_interval = 900
+        self.speed_x = 7
+        self.speed_y = 6
+        self.shoot_interval = 800
         tinted = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
         tinted.fill((255, 50, 50, 100))
         self.image.blit(tinted, (0, 0))
@@ -176,27 +153,30 @@ class Boss(pygame.sprite.Sprite):
                 self.image = self.explosion_frames[self.explosion_index]
                 self.explosion_index += 1
             else:
-                return True 
+                return True
         return False
 
 
 
 class Laser(pygame.sprite.Sprite):
-    def __init__(self, pos, sound=None, strong=False):
+    def __init__(self, pos, direction=1, sound=None, strong=False):
         super().__init__()
+        self.direction = direction  # 1 = direita, -1 = esquerda
         self.image = pygame.Surface((12 if strong else 8, 4))
-        self.image.fill((255, 255, 0) if strong else (0, 255, 0))
+        color = (255, 255, 0) if strong else (0, 255, 0)
+        self.image.fill(color)
+        if self.direction == -1:
+            self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect(midleft=pos)
-        self.speed = 10
+        self.speed = 10 * self.direction
         self.damage = 40 if strong else 20
         if sound:
             sound.play()
 
     def update(self):
         self.rect.x += self.speed
-        if self.rect.left > SCREEN_WIDTH:
+        if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH:
             self.kill()
-
 
 
 class BossLevel:
@@ -227,6 +207,8 @@ class BossLevel:
         self.armor_hits = 0
         self.power_end_time = 0
         self.strong_laser = False
+
+        self.last_direction = 1  # COMEÇA OLHANDO PARA A DIREITA
 
         try:
             self.laser_sound = pygame.mixer.Sound("assets/backgrounds/audio/laser-fire.mp3")
@@ -307,6 +289,11 @@ class BossLevel:
             player.direction.x = 1
         else:
             player.direction.x = 0
+
+     
+        if player.direction.x != 0:
+            self.last_direction = player.direction.x
+
         if keys[pygame.K_SPACE] and player.on_ground:
             player.jump()
         if keys[pygame.K_f]:
@@ -314,7 +301,6 @@ class BossLevel:
 
         player.rect.x += player.direction.x * player.speed
 
-        # mantém dentro da tela
         if player.rect.left < 0:
             player.rect.left = 0
         elif player.rect.right > SCREEN_WIDTH:
@@ -358,10 +344,16 @@ class BossLevel:
                 return
         player.on_ground = False
 
+
     def shoot_laser(self):
         player = self.player.sprite
         if len(self.lasers) < 3:
-            laser = Laser((player.rect.right, player.rect.centery), self.laser_sound, strong=self.strong_laser)
+            direction = self.last_direction if hasattr(self, "last_direction") else 1
+            start_pos = (
+                player.rect.left if direction == -1 else player.rect.right,
+                player.rect.centery
+            )
+            laser = Laser(start_pos, direction=direction, sound=self.laser_sound, strong=self.strong_laser)
             self.lasers.add(laser)
 
     def check_projectile_collisions(self):

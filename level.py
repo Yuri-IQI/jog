@@ -3,7 +3,6 @@ import random
 from player import Player
 from item import Item
 
-
 SCREEN_WIDTH = 600
 TILE_COLUMNS = 25
 TILE_ROWS = 28
@@ -18,63 +17,55 @@ class Level:
         self.game_won = False
         self.game_over = False
 
-    
         self.background_image = None
         self.victory_image = None
         self.gameover_image = None
 
-  
         self.restart_button_rect = None
         self.next_level_button_rect = None
         self.restart_to_level1_button_rect = None
-
 
         self.layout = self.get_layout()
         self.tiles = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
 
-   
         spawn_pos = self.find_spawn_point()
         self.player = pygame.sprite.GroupSingle(Player(spawn_pos, size=(TILE_SIZE, TILE_SIZE)))
 
-  
         self.load_images()
         self.build_tiles()
         self.place_items()
         self.start_music()
 
-   
     def get_layout(self):
         return [
-            " XXXXXXX           XXXXX ",
-            "                         ",
-            "        XXXXX            ",
-            "                         ",
-            "   XXXXXX   XXXXXX       ",
-            "                         ",
-            "  X      XXXXXXXXXXXXXX  ",
-            "                         ",
-            "   XXXXXXXX  XXXXXXXXX   ",
-            "                         ",
-            "  XXX    XXXXX   XXXXXX  ",
-            "                         ",
-            "   XXXXXXXXXXXXXXXXXXX   ",
-            "                         ",
-            "   X       XXXXX         ",
-            "                         ",
-            "   XXXXXXXXXXXXXXXX      ",
-            "                         ",
-            "   XXXXXXXXXX      XXXXXX",
-            "                         ",
-            "   XXXXXXXXXXXXXXXXX     ",
-            "                         ",
-            "XXXXXXXX   X   XXXXXXXXXX",
-            "                         ",
-            "                         ",
-            "            P            ",
-            "XXXXXXXXXXXXXXXXXXXXXXXXX",
+            " XXXXXXXXXX   XXXXXXXXXXX ",  
+            "                         ",   
+            "  XXXX      XXXXXXXXXXXX  ",  
+            "                         ",  
+            "                         ",   
+            "  X  XXX    XXXXXXXXXXXXX ",  
+            "           X              ",  
+            "   XXXXXXXX  XXXXXXXXX    ",  
+            "                         ",  
+            "  XXX    XXXXX   XXXXXX   ",  
+            " XX                      ",    
+            "   XXXXXXXXXXXXXXXXXXX    ",  
+            "                         ",  
+            "   X  XXX     XXXXX       ",  
+            "          X           XXX ",  
+            "   XXXXXXXXXXXXXXXX XX    ",  
+            "                         ", 
+            "   XXXXXXXXXX      XXXXXX ", 
+            "                         ",   
+            "   XXXXXXXXXXXXXXXXX      ",  
+            "                         ",   
+            "XXXXXXXX   X   XXXXXXXXXX ",  
+            "  XX      XXXX         XX ", 
+            "    XXXX         XXX     X",   
+            "            P             ",   
+            "XXXXXXXXXXXXXXXXXXXXXXXXX ",   
         ]
-
 
     def find_spawn_point(self):
         for row_index, row in enumerate(self.layout):
@@ -83,7 +74,6 @@ class Level:
                     return (col_index * TILE_SIZE, row_index * TILE_SIZE)
         return (50, SCREEN_HEIGHT - TILE_SIZE * 4)
 
-  
     def load_images(self):
         try:
             raw_bg = pygame.image.load("assets/backgrounds/fase1.jpg").convert()
@@ -106,7 +96,6 @@ class Level:
             self.gameover_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.gameover_image.fill((100, 0, 0))
 
-      
         tile_paths = [
             "assets/tiles/Terreno 01.png",
             "assets/tiles/Terreno 02.png",
@@ -123,9 +112,8 @@ class Level:
                 surf.fill((100, 50, 0))
                 self.tile_images.append(surf)
 
-
     def start_music(self):
-        path = "assets/backgrounds/audio/hong-kong-97.mp3"
+        path = "assets/backgrounds/audio/fase1.mp3"
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
@@ -134,7 +122,6 @@ class Level:
             pygame.mixer.music.set_volume(0.5)
         except Exception:
             pass
-
 
     def build_tiles(self):
         for row_index, row in enumerate(self.layout):
@@ -148,7 +135,7 @@ class Level:
     def place_items(self):
         item_types = (['hamburguer'] * 2 + ['refrigerante'] * 2 +
                       ['sorvete'] * 1 + ['maca'] * 8 +
-                      ['alface'] * 3 + ['banana'] * 3)
+                      ['alface'] * 2 + ['banana'] * 2)
 
         potential_positions = []
         VERTICAL_OFFSET = 5
@@ -167,11 +154,9 @@ class Level:
                 item = Item(pos, (TILE_SIZE, TILE_SIZE), random.choice(item_types))
                 self.items.add(item)
 
-
     def restart_game(self):
         self.__init__()
 
-  
     def update(self):
         if self.game_won or self.game_over:
             return
@@ -202,7 +187,6 @@ class Level:
 
         self.items.update()
         self.check_item_collisions()
-
 
     def collision_horizontal(self, player):
         for tile in self.tiles:
@@ -246,7 +230,6 @@ class Level:
         font = pygame.font.Font(None, 36)
         player = self.player.sprite
 
-        # Vitória
         if self.game_won:
             screen.blit(self.victory_image, (0, 0))
             button_width, button_height = 200, 60
@@ -266,7 +249,6 @@ class Level:
             screen.blit(next_text, next_text.get_rect(center=self.next_level_button_rect.center))
             return
 
-        # Game Over
         if self.game_over:
             screen.blit(self.gameover_image, (0, 0))
             button_width, button_height = 260, 60
@@ -279,7 +261,6 @@ class Level:
             screen.blit(restart_text, restart_text.get_rect(center=self.restart_to_level1_button_rect.center))
             return
 
-        # HUD
         info_texts = [
             f"Fase: 1",
             f"Itens: {player.good_items_collected} bons / {player.bad_items_collected} ruins"
@@ -293,7 +274,6 @@ class Level:
             text_surface = font.render(text, True, (255, 255, 0))
             info_surface.blit(text_surface, (padding, padding + i * line_height))
         screen.blit(info_surface, (10, 10))
-
 
     def handle_click(self, pos):
         if self.game_won:
