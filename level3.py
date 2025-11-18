@@ -1,5 +1,6 @@
 import pygame
 import random
+import json
 from player import Player
 from item import Item
 
@@ -53,33 +54,33 @@ class Level3:
     
     def get_layout(self):
      return [
-        "XXXXXXXXXXX   XXXXXXXXXXX",
-        "X     X         X     X X",
-        "X XXX X XX XXXX X XXX X X",
-        "X X   X     X     X   X X",
-        "X X X       XXXX XXXXX X ",
-        "X X     X   X   X     X X",
-        "X X   X X   X XXX XXXXX X",
-        "X     X XX  X   X X     X",
-        "XXX   X       X X X XXXXX",
-        "X     X X X   X X X     X",
-        "X XXXXX            XXXX X",
-        "X X     X   X X     X   X",
-        "X X XXXXX X XXXXXX X XXX ",
-        "X X X   X X X    X X   X ",
-        "X       X X X XX X XXX X ",
-        "X X X X              X X ",
-        "XX X             X X X X ",
-        "X X X X X X   X  X X X X ",
-        "X   X X XXXXX XXXXXX X X ",
-        "X X X X     X        X X ",
-        "X X XXXXXXX X     XXX X X",
-        "X              X     X X ",
-        "X XXXXXXX XXXXX X XXXXX X",
-        "X                   X  X ",
-        "XXX XXXXXXXXX X XXX X XXX",
-        "X                        ",
-        "X P    XXX X XXX X XXXXX ",
+        "XXXXXXXXX          XXXXXX",
+        "X   X   X     X   X     X",
+        "X X X X X XXX X X X XXX X",
+        "X X   X X   X   X     X X",
+        "X XXX X XXX XXXXX XXXXX X",
+        "X   X X   X     X     X X",
+        "XXX X XXX XXXXX X XXX X X",
+        "X   X   X X   X X   X   X",
+        "X XXXXX X X X X XXX XXX X",
+        "X     X   X X   X   X   X",
+        "XXXXX XXXXX XXXXX X XXX X",
+        "X   X     X     X X   X X",
+        "X X XXXXX XXX X X XXX X X",
+        "X X X   X   X X X   X X X",
+        "X X X X XXX X X XXX XXX X",
+        "X   X X   X   X   X   X X",
+        "XXX X XXX XXXXX X XXX X X",
+        "X   X   X     X X   X   X",
+        "X XXXXX XXXXX X XXX XXXXX",
+        "X X   X     X     X     X",
+        "X X X XXXXX XXXXX XXXXX X",
+        "X   X     X     X     X X",
+        "XXX XXXXX XXX X XXXXX X X",
+        "X         X   X       X X",
+        "X XXXXXXXXX XXX XXXXXXX X",
+        "X                       X",
+        "X P  XXX XXX XXX XXX XX X",
         "XXXXXXXXXXXXXXXXXXXXXXXXX",
      ]
 
@@ -158,15 +159,26 @@ class Level3:
 
 
     def start_music(self):
-        music_path = "assets/backgrounds/audio/trilha sonora3.mp3"
+        # Carrega a música configurada pelo usuário
+        music_path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
             pygame.mixer.music.load(music_path)
             pygame.mixer.music.play(-1)
             pygame.mixer.music.set_volume(0.6)
-        except Exception:
+        except Exception as e:
+            print(f"Erro ao carregar música: {e}")
             pass
+
+    def get_music_path(self):
+        """Carrega o caminho da música do arquivo de configuração"""
+        try:
+            with open("music_config.json", "r") as f:
+                config = json.load(f)
+                return config.get("3", "assets/backgrounds/audio/trilha sonora3.mp3")
+        except Exception:
+            return "assets/backgrounds/audio/trilha sonora3.mp3"
 
 
     def build_tiles(self):
@@ -203,13 +215,13 @@ class Level3:
 
     def place_cannons(self):
         positions = [
-            (60, 500, 1), (160, 500, 1), (260, 500, -1),
-            (360, 460, -1), (480, 480, 1),
-            (100, 320, 1), (250, 300, -1), (400, 280, 1),
-            (520, 300, -1), (50, 180, 1), (550, 180, -1),
-            (120, 100, 1), (300, 80, -1), (480, 100, -1),
-            (50, 380, 1), (550, 400, -1), (300, 380, -1),
-            (200, 200, 1), (420, 200, -1)
+            (60, 520, 1), (180, 500, -1), (300, 520, 1),
+            (420, 500, -1), (540, 520, 1),
+            (80, 400, 1), (240, 380, -1), (360, 400, 1),
+            (500, 380, -1), (140, 260, 1), (380, 240, -1),
+            (50, 180, 1), (280, 160, -1), (480, 180, 1),
+            (120, 100, -1), (340, 80, 1), (560, 100, -1),
+            (200, 320, 1), (440, 300, -1), (320, 460, -1)
         ]
         for pos_x, pos_y, direction in positions:
             cannon = pygame.sprite.Sprite()
@@ -359,7 +371,7 @@ class Level3:
             if self.restart_to_level1_button_rect and self.restart_to_level1_button_rect.collidepoint(pos):
                 return "restart_level1"
             if hasattr(self, 'next_level_button_rect') and self.next_level_button_rect.collidepoint(pos):
-                return "next_level"  # <-- vai carregar a Fase 4
+                return "next_level"  
         elif self.game_over and self.restart_to_level1_button_rect and self.restart_to_level1_button_rect.collidepoint(pos):
             return "restart_level1"
         return None

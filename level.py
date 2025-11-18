@@ -1,5 +1,6 @@
 import pygame
 import random
+import json
 from player import Player
 from item import Item
 
@@ -9,6 +10,35 @@ TILE_ROWS = 28
 TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
 ITEM_SIZE = TILE_SIZE * 0.8
+
+
+class House(pygame.sprite.Sprite):
+    def __init__(self, x, y, house_type='small'):
+        super().__init__()
+        if house_type == 'small':
+            width, height = TILE_SIZE * 2, TILE_SIZE * 2
+            color = (139, 69, 19)  
+        else:
+            width, height = TILE_SIZE * 3, TILE_SIZE * 3
+            color = (160, 82, 45)  
+
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+ 
+        house_rect = pygame.Rect(0, height // 3, width, height * 2 // 3)
+        pygame.draw.rect(self.image, color, house_rect)
+ 
+        roof_points = [(0, height // 3), (width // 2, 0), (width, height // 3)]
+        pygame.draw.polygon(self.image, (178, 34, 34), roof_points) 
+
+        window_size = width // 4
+        window_rect = pygame.Rect(width // 4, height // 2, window_size, window_size)
+        pygame.draw.rect(self.image, (135, 206, 235), window_rect)  
+      
+        door_rect = pygame.Rect(width * 3 // 5, height * 2 // 3, width // 4, height // 3)
+        pygame.draw.rect(self.image, (101, 67, 33), door_rect) 
+
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.original_x = x
 
 
 class Level:
@@ -25,62 +55,57 @@ class Level:
         self.next_level_button_rect = None
         self.restart_to_level1_button_rect = None
 
-        self.layout = self.get_layout()
-        self.tiles = pygame.sprite.Group()
-        self.items = pygame.sprite.Group()
+  
+        self.scroll_speed = 3  
 
-        spawn_pos = self.find_spawn_point()
-        self.player = pygame.sprite.GroupSingle(Player(spawn_pos, size=(TILE_SIZE, TILE_SIZE)))
+       
+        self.background_x = 0
+        self.background_width = SCREEN_WIDTH * 8 
+
+       
+        self.floor_y = SCREEN_HEIGHT - TILE_SIZE * 3
+        self.tiles = pygame.sprite.Group()
+
+      
+        self.houses = pygame.sprite.Group()
+        self.house_scroll_speed = self.scroll_speed * 0.3 
+
+     
+        self.items = pygame.sprite.Group()
+        self.spawn_timer = 0
+        self.spawn_interval = 60
+
+     
+        self.obstacles = pygame.sprite.Group()
+        self.obstacle_timer = 0
+        self.obstacle_interval = 90
+
+        
+        player_x = 100
+        player_y = self.floor_y - TILE_SIZE
+        self.player = pygame.sprite.GroupSingle(Player((player_x, player_y), size=(TILE_SIZE, TILE_SIZE)))
 
         self.load_images()
-        self.build_tiles()
-        self.place_items()
+        self.build_floor()
+        self.spawn_initial_houses()
         self.start_music()
-
-    def get_layout(self):
-        return [
-            " XXXXXXXXXX   XXXXXXXXXXX ",  
-            "                         ",   
-            "  XXXX      XXXXXXXXXXXX  ",  
-            "                         ",  
-            "                         ",   
-            "  X  XXX    XXXXXXXXXXXXX ",  
-            "           X              ",  
-            "   XXXXXXXX  XXXXXXXXX    ",  
-            "                         ",  
-            "  XXX    XXXXX   XXXXXX   ",  
-            " XX                      ",    
-            "   XXXXXXXXXXXXXXXXXXX    ",  
-            "                         ",  
-            "   X  XXX     XXXXX       ",  
-            "          X           XXX ",  
-            "   XXXXXXXXXXXXXXXX XX    ",  
-            "                         ", 
-            "   XXXXXXXXXX      XXXXXX ", 
-            "                         ",   
-            "   XXXXXXXXXXXXXXXXX      ",  
-            "                         ",   
-            "XXXXXXXX   X   XXXXXXXXXX ",  
-            "  XX      XXXX         XX ", 
-            "    XXXX         XXX     X",   
-            "            P             ",   
-            "XXXXXXXXXXXXXXXXXXXXXXXXX ",   
-        ]
-
-    def find_spawn_point(self):
-        for row_index, row in enumerate(self.layout):
-            for col_index, cell in enumerate(row):
-                if cell == 'P':
-                    return (col_index * TILE_SIZE, row_index * TILE_SIZE)
-        return (50, SCREEN_HEIGHT - TILE_SIZE * 4)
 
     def load_images(self):
         try:
             raw_bg = pygame.image.load("assets/backgrounds/fase1.jpg").convert()
-            self.background_image = pygame.transform.scale(raw_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        except Exception:
-            self.background_image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            self.background_image.fill((20, 20, 50))
+        
+            self.background_image = pygame.transform.scale(raw_bg, (self.background_width, SCREEN_HEIGHT))
+            print(f"Background carregado: {self.background_width}x{SCREEN_HEIGHT}")
+        except Exception as e:
+            print(f"Erro ao carregar background: {e}")
+      
+            self.background_image = pygame.Surface((self.background_width, SCREEN_HEIGHT))
+            for y in range(SCREEN_HEIGHT):
+                color_factor = y / SCREEN_HEIGHT
+                r = int(135 + (200 - 135) * color_factor)
+                g = int(206 + (220 - 206) * color_factor)
+                b = int(235 + (255 - 235) * color_factor)
+                pygame.draw.line(self.background_image, (r, g, b), (0, y), (self.background_width, y))
 
         try:
             raw_victory = pygame.image.load("assets/backgrounds/victory.png").convert_alpha()
@@ -109,73 +134,135 @@ class Level:
                 self.tile_images.append(scaled)
             except Exception:
                 surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-                surf.fill((100, 50, 0))
+                surf.fill((34, 139, 34))  
                 self.tile_images.append(surf)
 
     def start_music(self):
-        path = "assets/backgrounds/audio/fase1.mp3"
+        # Carrega a música configurada pelo usuário
+        path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
             pygame.mixer.music.load(path)
             pygame.mixer.music.play(-1)
             pygame.mixer.music.set_volume(0.5)
-        except Exception:
+        except Exception as e:
+            print(f"Erro ao carregar música: {e}")
             pass
 
-    def build_tiles(self):
-        for row_index, row in enumerate(self.layout):
-            for col_index, cell in enumerate(row):
-                if cell == "X":
-                    tile = pygame.sprite.Sprite()
-                    tile.image = random.choice(self.tile_images)
-                    tile.rect = tile.image.get_rect(topleft=(col_index * TILE_SIZE, row_index * TILE_SIZE))
-                    self.tiles.add(tile)
+    def get_music_path(self):
+        """Carrega o caminho da música do arquivo de configuração"""
+        try:
+            with open("music_config.json", "r") as f:
+                config = json.load(f)
+                return config.get("1", "assets/backgrounds/audio/Aquatic Ambience.mp3")
+        except Exception:
+            return "assets/backgrounds/audio/Aquatic Ambience.mp3"
 
-    def place_items(self):
-        item_types = (['hamburguer'] * 2 + ['refrigerante'] * 2 +
-                      ['sorvete'] * 1 + ['maca'] * 8 +
-                      ['alface'] * 2 + ['banana'] * 2)
+    def build_floor(self):
+      
+        num_tiles = (SCREEN_WIDTH // TILE_SIZE) + 3
+        for i in range(num_tiles):
+            tile = pygame.sprite.Sprite()
+            tile.image = random.choice(self.tile_images)
+            tile.rect = tile.image.get_rect(topleft=(i * TILE_SIZE, self.floor_y))
+            self.tiles.add(tile)
 
-        potential_positions = []
-        VERTICAL_OFFSET = 5
-        for y, row in enumerate(self.layout):
-            for x, cell in enumerate(row):
-                if cell == 'X' and y > 0 and self.layout[y - 1][x] == ' ':
-                    pos_x = x * TILE_SIZE
-                    pos_y = y * TILE_SIZE - ITEM_SIZE - VERTICAL_OFFSET
-                    if y * TILE_SIZE > TILE_SIZE * 3:
-                        potential_positions.append((pos_x, pos_y))
+    def spawn_initial_houses(self):
+  
+        positions = [
+            (100, self.floor_y - TILE_SIZE * 2, 'small'),
+            (200, self.floor_y - TILE_SIZE * 3, 'big'),
+            (350, self.floor_y - TILE_SIZE * 2, 'small'),
+            (470, self.floor_y - TILE_SIZE * 3, 'big'),
+            (600, self.floor_y - TILE_SIZE * 2, 'small'),
+            (750, self.floor_y - TILE_SIZE * 3, 'big'),
+            (900, self.floor_y - TILE_SIZE * 2, 'small'),
+        ]
+        for x, y, house_type in positions:
+            house = House(x, y, house_type)
+            self.houses.add(house)
 
-        if potential_positions:
-            random.shuffle(potential_positions)
-            num_items = min(32, int(len(potential_positions) * 0.5))
-            for pos in potential_positions[:num_items]:
-                item = Item(pos, (TILE_SIZE, TILE_SIZE), random.choice(item_types))
-                self.items.add(item)
+    def spawn_house(self):
+    
+        house_type = random.choice(['small', 'big'])
+        y = self.floor_y - (TILE_SIZE * 2 if house_type == 'small' else TILE_SIZE * 3)
+        house = House(SCREEN_WIDTH + TILE_SIZE, y, house_type)
+        self.houses.add(house)
 
-    def restart_game(self):
-        self.__init__()
+    def spawn_good_item(self):
+       
+        good_foods = ['maca', 'banana', 'alface']
+        item_type = random.choice(good_foods)
+        x = random.randint(50, SCREEN_WIDTH - 50)
+        y = -TILE_SIZE
+        item = Item((x, y), (TILE_SIZE, TILE_SIZE), item_type)
+        item.fall_speed = random.uniform(4, 6)
+        item.is_falling = True
+        self.items.add(item)
+
+    def spawn_bad_falling_item(self):
+        """Spawna comida RUIM caindo do céu (chuva de junk food)"""
+        bad_foods = ['hamburguer', 'refrigerante', 'sorvete']
+        item_type = random.choice(bad_foods)
+        x = random.randint(50, SCREEN_WIDTH - 50)
+        y = -TILE_SIZE
+        item = Item((x, y), (TILE_SIZE, TILE_SIZE), item_type)
+        item.fall_speed = random.uniform(5, 7) 
+        item.is_falling = True
+        item.is_bad_rain = True  
+        self.items.add(item)
+
+    def spawn_obstacle(self):
+        bad_foods = ['hamburguer', 'refrigerante', 'sorvete']
+        item_type = random.choice(bad_foods)
+        x = SCREEN_WIDTH + TILE_SIZE
+        y = random.choice([
+            self.floor_y - TILE_SIZE,  
+            self.floor_y - TILE_SIZE * 3,  
+            self.floor_y - TILE_SIZE * 5   
+        ])
+        obstacle = Item((x, y), (TILE_SIZE, TILE_SIZE), item_type)
+        obstacle.is_obstacle = True
+        self.obstacles.add(obstacle)
 
     def update(self):
         if self.game_won or self.game_over:
             return
 
         player = self.player.sprite
+
+       
+        self.background_x -= 0.5 
+     
+        if self.background_x <= -(self.background_width - SCREEN_WIDTH):
+            self.background_x = 0
+
+     
+        for house in self.houses:
+            house.rect.x -= self.house_scroll_speed
+            if house.rect.right < 0:
+                house.kill()
+
+        
+        if random.randint(0, 100) < 5:  
+            self.spawn_house()
+
+ 
+        for tile in self.tiles:
+            tile.rect.x -= self.scroll_speed
+            if tile.rect.right < 0:
+                max_x = max(t.rect.x for t in self.tiles)
+                tile.rect.x = max_x + TILE_SIZE
+
+       
         player.update()
 
-        keys = pygame.key.get_pressed()
-        if player.died or keys[pygame.K_r]:
-            self.restart_game()
-            return
-
-        if player.rect.bottom < 0:
-            self.game_won = True
-            pygame.mixer.music.stop()
-            return
+      
+        if player.on_ground and player.direction.x == 0:
+            player.animation_state = 'run'
 
         player.rect.x += player.direction.x * player.speed
-        self.collision_horizontal(player)
 
         if player.rect.left < 0:
             player.rect.left = 0
@@ -183,48 +270,93 @@ class Level:
             player.rect.right = SCREEN_WIDTH
 
         player.apply_gravity()
-        self.collision_vertical(player)
+        self.check_floor_collision(player)
 
-        self.items.update()
+        self.spawn_timer += 1
+        if self.spawn_timer >= self.spawn_interval:
+          
+            if random.randint(0, 100) < 70:
+                self.spawn_good_item()
+            else:
+                self.spawn_bad_falling_item()
+            self.spawn_timer = 0
+            self.spawn_interval = random.randint(40, 80)
+
+   
+        self.obstacle_timer += 1
+        if self.obstacle_timer >= self.obstacle_interval:
+            self.spawn_obstacle()
+            self.obstacle_timer = 0
+            self.obstacle_interval = random.randint(60, 120)
+
+       
+        for item in self.items:
+            if hasattr(item, 'is_falling') and item.is_falling:
+                item.rect.y += item.fall_speed
+                # Remover se passar do chão
+                if item.rect.top > SCREEN_HEIGHT:
+                    item.kill()
+
+        for obstacle in self.obstacles:
+            obstacle.rect.x -= self.scroll_speed + 4 
+            if obstacle.rect.right < 0:
+                obstacle.kill()
+
+   
         self.check_item_collisions()
+        self.check_obstacle_collisions()
 
-    def collision_horizontal(self, player):
-        for tile in self.tiles:
-            if player.rect.colliderect(tile.rect):
-                if player.direction.x > 0:
-                    player.rect.right = tile.rect.left
-                elif player.direction.x < 0:
-                    player.rect.left = tile.rect.right
+    
+        if player.good_items_collected >= 10:
+            self.game_won = True
+            pygame.mixer.music.stop()
 
-    def collision_vertical(self, player):
-        player.on_ground = False
-        for tile in self.tiles:
-            if player.rect.colliderect(tile.rect):
-                if player.direction.y > 0:
-                    player.rect.bottom = tile.rect.top
-                    player.direction.y = 0
-                    player.on_ground = True
-                elif player.direction.y < 0:
-                    player.rect.top = tile.rect.bottom
-                    player.direction.y = 0
+       
+        if player.bad_items_collected >= 3:
+            self.game_over = True
+            pygame.mixer.music.stop()
+
+    def check_floor_collision(self, player):
+        if player.rect.bottom >= self.floor_y:
+            player.rect.bottom = self.floor_y
+            player.direction.y = 0
+            player.on_ground = True
+        else:
+            player.on_ground = False
 
     def check_item_collisions(self):
         player = self.player.sprite
         collided_items = pygame.sprite.spritecollide(player, self.items, True)
         for item in collided_items:
-            player.collect_item(item)
-            if item.type in ['sorvete', 'refrigerante', 'hamburguer']:
+            if hasattr(item, 'is_bad_rain') and item.is_bad_rain:
                 player.bad_items_collected += 1
-            if player.bad_items_collected >= 8:
-                self.game_over = True
-                pygame.mixer.music.stop()
-                break
+            else:
+                player.good_items_collected += 1
+
+    def check_obstacle_collisions(self):
+        player = self.player.sprite
+        collided_obstacles = pygame.sprite.spritecollide(player, self.obstacles, True)
+        for obstacle in collided_obstacles:
+            player.bad_items_collected += 1
 
     def draw(self, screen):
+
         if self.background_image:
-            screen.blit(self.background_image, (0, 0))
+            screen.blit(self.background_image, (self.background_x, 0))
+            if self.background_x < 0:
+                screen.blit(self.background_image, (self.background_x + self.background_width, 0))
+
+  
+        self.houses.draw(screen)
+
+   
         self.tiles.draw(screen)
+
+      
         self.items.draw(screen)
+        self.obstacles.draw(screen)
+
+      
         self.player.draw(screen)
 
         font = pygame.font.Font(None, 36)
@@ -261,14 +393,15 @@ class Level:
             screen.blit(restart_text, restart_text.get_rect(center=self.restart_to_level1_button_rect.center))
             return
 
+       
         info_texts = [
-            f"Fase: 1",
-            f"Itens: {player.good_items_collected} bons / {player.bad_items_collected} ruins"
+            f"Fase: 1 - Runner",
+            f"Boas: {player.good_items_collected}/10 | Ruins: {player.bad_items_collected}/3"
         ]
         font = pygame.font.Font(None, 32)
         line_height = 30
         padding = 10
-        info_surface = pygame.Surface((400, 60), pygame.SRCALPHA)
+        info_surface = pygame.Surface((450, 60), pygame.SRCALPHA)
         info_surface.fill((0, 0, 0, 150))
         for i, text in enumerate(info_texts):
             text_surface = font.render(text, True, (255, 255, 0))

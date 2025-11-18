@@ -1,6 +1,7 @@
 import pygame
 import random
 import math
+import json
 from player import Player
 from item import Item
 from PIL import Image
@@ -12,6 +13,77 @@ TILE_ROWS = 28
 TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
 ITEM_SIZE = TILE_SIZE * 0.8
+
+
+class Cutscene:
+    def __init__(self, dialogues):
+        self.dialogues = dialogues  
+        self.current_dialogue = 0
+        self.finished = False
+        self.font_large = pygame.font.Font(None, 32)
+        self.font_small = pygame.font.Font(None, 24)
+
+    def update(self, event):
+        if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+            self.current_dialogue += 1
+            if self.current_dialogue >= len(self.dialogues):
+                self.finished = True
+
+    def draw(self, screen):
+        if self.finished:
+            return
+
+      
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+
+       
+        character, text = self.dialogues[self.current_dialogue]
+
+        
+        dialog_box_height = 150
+        dialog_box_y = SCREEN_HEIGHT - dialog_box_height - 20
+        dialog_box = pygame.Rect(20, dialog_box_y, SCREEN_WIDTH - 40, dialog_box_height)
+        pygame.draw.rect(screen, (0, 0, 0, 220), dialog_box, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), dialog_box, 3, border_radius=10)
+
+    
+        name_surface = self.font_large.render(character, True, (255, 255, 0))
+        screen.blit(name_surface, (40, dialog_box_y + 15))
+
+       
+        self.draw_text_wrapped(screen, text, (40, dialog_box_y + 55), SCREEN_WIDTH - 80)
+
+        
+        hint_text = self.font_small.render("Pressione qualquer tecla para continuar...", True, (100, 100, 100))
+        screen.blit(hint_text, (SCREEN_WIDTH - hint_text.get_width() - 30, SCREEN_HEIGHT - 30))
+
+    def draw_text_wrapped(self, screen, text, pos, max_width):
+        words = text.split(' ')
+        lines = []
+        current_line = []
+
+        for word in words:
+            current_line.append(word)
+            test_line = ' '.join(current_line)
+            if self.font_small.size(test_line)[0] > max_width:
+                if len(current_line) > 1:
+                    current_line.pop()
+                    lines.append(' '.join(current_line))
+                    current_line = [word]
+                else:
+                    lines.append(test_line)
+                    current_line = []
+
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        y = pos[1]
+        for line in lines:
+            line_surface = self.font_small.render(line, True, (255, 255, 255))
+            screen.blit(line_surface, (pos[0], y))
+            y += 30
 
 
 class PowerUp(pygame.sprite.Sprite):
@@ -161,7 +233,7 @@ class Boss(pygame.sprite.Sprite):
 class Laser(pygame.sprite.Sprite):
     def __init__(self, pos, direction=1, sound=None, strong=False):
         super().__init__()
-        self.direction = direction  # 1 = direita, -1 = esquerda
+        self.direction = direction  
         self.image = pygame.Surface((12 if strong else 8, 4))
         color = (255, 255, 0) if strong else (0, 255, 0)
         self.image.fill(color)
@@ -208,15 +280,22 @@ class BossLevel:
         self.power_end_time = 0
         self.strong_laser = False
 
-        self.last_direction = 1  # COMEÇA OLHANDO PARA A DIREITA
+        self.last_direction = 1  
 
         try:
-            self.laser_sound = pygame.mixer.Sound("assets/backgrounds/audio/laser-fire.mp3")
+            self.laser_sound = pygame.mixer.Sound("assets/backgrounds/sounds/laser-fire.mp3")
             self.laser_sound.set_volume(0.4)
         except Exception:
             self.laser_sound = None
 
         self.build_floor()
+
+        # Sistema de cutscene
+        self.cutscene = Cutscene([
+            ("Farmador de Aura", "Finalmente cheguei até você! Seu reinado de junk food acaba aqui!"),
+            ("Boss Betinha", "Você ousa me desafiar? Vou te enterrar em hambúrgueres e refrigerantes!")
+        ])
+        self.cutscene_active = True
 
     def build_floor(self):
         floor_y = SCREEN_HEIGHT - TILE_SIZE
@@ -264,17 +343,31 @@ class BossLevel:
                 self.tile_images.append(surf)
 
     def start_music(self):
-        path = "assets/backgrounds/audio/TrilhaSonora4.mp3"
+        # Carrega a música configurada pelo usuário
+        path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
             pygame.mixer.music.load(path)
             pygame.mixer.music.play(-1)
             pygame.mixer.music.set_volume(0.6)
-        except Exception:
+        except Exception as e:
+            print(f"Erro ao carregar música: {e}")
             pass
 
+    def get_music_path(self):
+        """Carrega o caminho da música do arquivo de configuração"""
+        try:
+            with open("music_config.json", "r") as f:
+                config = json.load(f)
+                return config.get("4", "assets/backgrounds/audio/TrilhaSonora4.mp3")
+        except Exception:
+            return "assets/backgrounds/audio/TrilhaSonora4.mp3"
+
     def update(self):
+        if self.cutscene_active:
+            return
+
         if self.game_over or self.game_won:
             return
 
@@ -290,7 +383,7 @@ class BossLevel:
         else:
             player.direction.x = 0
 
-     
+
         if player.direction.x != 0:
             self.last_direction = player.direction.x
 
@@ -397,6 +490,11 @@ class BossLevel:
         font = pygame.font.Font(None, 36)
         boss = self.boss.sprite
 
+    
+        if self.cutscene_active:
+            self.cutscene.draw(screen)
+            return
+
         pygame.draw.rect(screen, (255, 0, 0), (10, 10, boss.health / boss.max_health * 580, 25))
         hp_text = font.render(f"Boss HP: {boss.health}", True, (255, 255, 255))
         screen.blit(hp_text, (15, 12))
@@ -433,8 +531,17 @@ class BossLevel:
         screen.blit(font.render("Sair do Jogo", True, (255, 255, 255)), self.quit_button_rect.move(45, 15))
 
     def handle_click(self, pos):
+        if self.cutscene_active:
+            return None
+
         if self.restart_button_rect and self.restart_button_rect.collidepoint(pos):
             return "restart_level1"
         if self.quit_button_rect and self.quit_button_rect.collidepoint(pos):
             return "quit_game"
         return None
+
+    def handle_cutscene_event(self, event):
+        if self.cutscene_active and not self.cutscene.finished:
+            self.cutscene.update(event)
+            if self.cutscene.finished:
+                self.cutscene_active = False

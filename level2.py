@@ -1,5 +1,6 @@
 import pygame
 import random
+import json
 from player import Player
 from item import Item
 
@@ -143,15 +144,26 @@ class WaterLevel:
 
  
     def start_music(self):
-        path = "assets/backgrounds/audio/Dreamscape.mp3"
+        # Carrega a música configurada pelo usuário
+        path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
         try:
             pygame.mixer.music.load(path)
             pygame.mixer.music.play(-1)
             pygame.mixer.music.set_volume(0.4)
-        except:
+        except Exception as e:
+            print(f"Erro ao carregar música: {e}")
             pass
+
+    def get_music_path(self):
+        """Carrega o caminho da música do arquivo de configuração"""
+        try:
+            with open("music_config.json", "r") as f:
+                config = json.load(f)
+                return config.get("2", "assets/backgrounds/audio/Dreamscape.mp3")
+        except Exception:
+            return "assets/backgrounds/audio/Dreamscape.mp3"
 
  
     def update(self):
