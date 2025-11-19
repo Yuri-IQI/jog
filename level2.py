@@ -247,6 +247,9 @@ class WaterLevel:
             player.collect_item(item)
             if item.type in ['hamburguer', 'refrigerante', 'sorvete']:
                 player.bad_items_collected += 1
+                if item.type in player.hints:
+                    player.current_hint = player.hints[item.type]
+                    player.hint_timer = pygame.time.get_ticks()
             else:
                 player.good_items_collected += 1
             if player.bad_items_collected >= 8:
@@ -341,6 +344,20 @@ class WaterLevel:
             text_surface = font.render(text, True, (255, 255, 0))
             info_surface.blit(text_surface, (padding, padding + i * line_height))
         screen.blit(info_surface, (10, 10))
+
+       
+        if player.current_hint:
+            hint_font = pygame.font.Font(None, 28)
+            hint_text = hint_font.render(player.current_hint, True, (255, 255, 255))
+            hint_width = hint_text.get_width() + 30
+            hint_height = 50
+            hint_x = (SCREEN_WIDTH - hint_width) // 2
+            hint_y = SCREEN_HEIGHT - 120
+            hint_bg = pygame.Surface((hint_width, hint_height), pygame.SRCALPHA)
+            hint_bg.fill((255, 100, 100, 200))
+            screen.blit(hint_bg, (hint_x, hint_y))
+            pygame.draw.rect(screen, (255, 255, 255), (hint_x, hint_y, hint_width, hint_height), 3, border_radius=10)
+            screen.blit(hint_text, (hint_x + 15, hint_y + 15))
 
     def handle_click(self, pos):
         if self.game_won:

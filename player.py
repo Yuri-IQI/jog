@@ -44,11 +44,21 @@ class Player(pygame.sprite.Sprite):
         self.is_falling = False
         self.died = False
 
-        # Controle de sprite “gordo”
+        # Controle de sprite "gordo"
         self.fat_mode = False
         self.fat_mode_timer = 0
         self.fat_mode_duration = 2500  # 2,5s
         self.last_tick = pygame.time.get_ticks()
+
+        # Sistema de hints educativos
+        self.current_hint = None
+        self.hint_timer = 0
+        self.hint_duration = 3000  # 3 segundos
+        self.hints = {
+            'hamburguer': 'Hambúrgueres são ricos em gorduras saturadas!',
+            'refrigerante': 'Refrigerantes têm muito açúcar e fazem mal!',
+            'sorvete': 'Sorvete tem alto teor de açúcar e gordura!'
+        }
 
     def import_character_assets(self):
         path = 'assets/player/'
@@ -151,10 +161,15 @@ class Player(pygame.sprite.Sprite):
         self.get_input()
         self.animate()
 
-        # Atualiza timer do modo “gordo”
+        # Atualiza timer do modo "gordo"
         now = pygame.time.get_ticks()
         if self.fat_mode and (now - self.fat_mode_timer >= self.fat_mode_duration):
             self.fat_mode = False
+
+        # Atualiza timer do hint
+        if self.current_hint and (now - self.hint_timer >= self.hint_duration):
+            self.current_hint = None
+
         self.last_tick = now
 
     def collect_item(self, item):
@@ -162,9 +177,14 @@ class Player(pygame.sprite.Sprite):
             self.good_items_collected += 1
         else:
             self.bad_items_collected += 1
-       
+
             self.fat_mode = True
             self.fat_mode_timer = pygame.time.get_ticks()
+
+            # Ativa hint educativo para comida ruim
+            if item.type in self.hints:
+                self.current_hint = self.hints[item.type]
+                self.hint_timer = pygame.time.get_ticks()
 
         # Ajusta gravidade
         self.gravity = max(self.min_gravity, min(self.gravity + item.gravity_effect, self.max_gravity))

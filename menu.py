@@ -558,7 +558,9 @@ class MainMenu:
             ("Programação: Rafael Menezes", (255, 255, 255), 300),
             ("Assets & Design: Manoel Macedo", (255, 255, 255), 420),
             ("Equipe Criativa: Murilo Pedral, Anthony Yuri", (255, 200, 100), 460),
-            ("", (0, 0, 0), 500),
+            ("Product Owner: Franck Patrick ", (255, 100, 90), 500),
+            ("Scrum Master: Rene Marinho ", (255, 100, 90), 540),
+            ("", (0, 0, 0), 400),
         ]
 
         for text, color, y_pos in credits_data:

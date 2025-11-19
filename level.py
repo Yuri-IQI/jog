@@ -293,7 +293,6 @@ class Level:
         for item in self.items:
             if hasattr(item, 'is_falling') and item.is_falling:
                 item.rect.y += item.fall_speed
-                # Remover se passar do chão
                 if item.rect.top > SCREEN_HEIGHT:
                     item.kill()
 
@@ -330,6 +329,11 @@ class Level:
         for item in collided_items:
             if hasattr(item, 'is_bad_rain') and item.is_bad_rain:
                 player.bad_items_collected += 1
+                if item.type in player.hints:
+                    player.current_hint = player.hints[item.type]
+                    player.hint_timer = pygame.time.get_ticks()
+                player.fat_mode = True
+                player.fat_mode_timer = pygame.time.get_ticks()
             else:
                 player.good_items_collected += 1
 
@@ -338,6 +342,11 @@ class Level:
         collided_obstacles = pygame.sprite.spritecollide(player, self.obstacles, True)
         for obstacle in collided_obstacles:
             player.bad_items_collected += 1
+            if obstacle.type in player.hints:
+                player.current_hint = player.hints[obstacle.type]
+                player.hint_timer = pygame.time.get_ticks()
+            player.fat_mode = True
+            player.fat_mode_timer = pygame.time.get_ticks()
 
     def draw(self, screen):
 
@@ -393,7 +402,7 @@ class Level:
             screen.blit(restart_text, restart_text.get_rect(center=self.restart_to_level1_button_rect.center))
             return
 
-       
+
         info_texts = [
             f"Fase: 1 - Runner",
             f"Boas: {player.good_items_collected}/10 | Ruins: {player.bad_items_collected}/3"
@@ -407,6 +416,20 @@ class Level:
             text_surface = font.render(text, True, (255, 255, 0))
             info_surface.blit(text_surface, (padding, padding + i * line_height))
         screen.blit(info_surface, (10, 10))
+
+     
+        if player.current_hint:
+            hint_font = pygame.font.Font(None, 28)
+            hint_text = hint_font.render(player.current_hint, True, (255, 255, 255))
+            hint_width = hint_text.get_width() + 30
+            hint_height = 50
+            hint_x = (SCREEN_WIDTH - hint_width) // 2
+            hint_y = SCREEN_HEIGHT - 120
+            hint_bg = pygame.Surface((hint_width, hint_height), pygame.SRCALPHA)
+            hint_bg.fill((255, 100, 100, 200))
+            screen.blit(hint_bg, (hint_x, hint_y))
+            pygame.draw.rect(screen, (255, 255, 255), (hint_x, hint_y, hint_width, hint_height), 3, border_radius=10)
+            screen.blit(hint_text, (hint_x + 15, hint_y + 15))
 
     def handle_click(self, pos):
         if self.game_won:

@@ -304,8 +304,13 @@ class Level3:
     def check_projectile_collisions(self):
         player = self.player.sprite
         collided = pygame.sprite.spritecollide(player, self.projectiles, True)
-        for _ in collided:
+        for projectile in collided:
             player.bad_items_collected += 1
+            if projectile.type in player.hints:
+                player.current_hint = player.hints[projectile.type]
+                player.hint_timer = pygame.time.get_ticks()
+            player.fat_mode = True
+            player.fat_mode_timer = pygame.time.get_ticks()
             if player.bad_items_collected >= 3:
                 self.game_over = True
                 pygame.mixer.music.stop()
@@ -365,6 +370,20 @@ class Level3:
         screen.blit(hud_bg, (5, 5))
         info_surface = font.render(info_text, True, (255, 255, 0))
         screen.blit(info_surface, (15, 15))
+
+ 
+        if player.current_hint:
+            hint_font = pygame.font.Font(None, 28)
+            hint_text = hint_font.render(player.current_hint, True, (255, 255, 255))
+            hint_width = hint_text.get_width() + 30
+            hint_height = 50
+            hint_x = (SCREEN_WIDTH - hint_width) // 2
+            hint_y = SCREEN_HEIGHT - 120
+            hint_bg = pygame.Surface((hint_width, hint_height), pygame.SRCALPHA)
+            hint_bg.fill((255, 100, 100, 200))
+            screen.blit(hint_bg, (hint_x, hint_y))
+            pygame.draw.rect(screen, (255, 255, 255), (hint_x, hint_y, hint_width, hint_height), 3, border_radius=10)
+            screen.blit(hint_text, (hint_x + 15, hint_y + 15))
 
     def handle_click(self, pos):
         if self.game_won:
