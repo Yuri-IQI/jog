@@ -75,10 +75,11 @@ class Level:
         self.spawn_timer = 0
         self.spawn_interval = 60
 
-     
+
         self.obstacles = pygame.sprite.Group()
         self.obstacle_timer = 0
         self.obstacle_interval = 90
+        self.obstacle_count = 0  
 
         
         player_x = 100
@@ -138,7 +139,7 @@ class Level:
                 self.tile_images.append(surf)
 
     def start_music(self):
-        # Carrega a música configurada pelo usuário
+     
         path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
@@ -151,7 +152,7 @@ class Level:
             pass
 
     def get_music_path(self):
-        """Carrega o caminho da música do arquivo de configuração"""
+
         try:
             with open("music_config.json", "r") as f:
                 config = json.load(f)
@@ -202,7 +203,6 @@ class Level:
         self.items.add(item)
 
     def spawn_bad_falling_item(self):
-        """Spawna comida RUIM caindo do céu (chuva de junk food)"""
         bad_foods = ['hamburguer', 'refrigerante', 'sorvete']
         item_type = random.choice(bad_foods)
         x = random.randint(50, SCREEN_WIDTH - 50)
@@ -210,21 +210,40 @@ class Level:
         item = Item((x, y), (TILE_SIZE, TILE_SIZE), item_type)
         item.fall_speed = random.uniform(5, 7) 
         item.is_falling = True
-        item.is_bad_rain = True  
+        item.is_bad_rain = True
         self.items.add(item)
 
+    def spawn_ground_good_item(self, count=1):
+        good_foods = ['maca', 'banana', 'alface']
+        size = (int(TILE_SIZE * 1.5), int(TILE_SIZE * 1.5))
+        for i in range(count):
+            item_type = random.choice(good_foods)
+            x = SCREEN_WIDTH + TILE_SIZE * 6 + (i * TILE_SIZE * 4)  # Mais distante dos obstáculos
+            # Posição no ar (para pular e pegar)
+            y = self.floor_y - TILE_SIZE * random.randint(3, 5)
+            item = Item((x, y), size, item_type)
+            item.is_ground_item = True
+            self.items.add(item)
+
     def spawn_obstacle(self):
-        bad_foods = ['hamburguer', 'refrigerante', 'sorvete']
-        item_type = random.choice(bad_foods)
+        obstacle_types = ['pedra', 'cacto', 'hamburguer', 'refrigerante', 'sorvete']
+        item_type = random.choice(obstacle_types)
         x = SCREEN_WIDTH + TILE_SIZE
-        y = random.choice([
-            self.floor_y - TILE_SIZE,  
-            self.floor_y - TILE_SIZE * 3,  
-            self.floor_y - TILE_SIZE * 5   
-        ])
-        obstacle = Item((x, y), (TILE_SIZE, TILE_SIZE), item_type)
+        # Pedras e cactos são bem maiores
+        if item_type in ['pedra', 'cacto']:
+            size = (int(TILE_SIZE * 2.5), int(TILE_SIZE * 2.5))
+        else:
+            size = (int(TILE_SIZE * 1.5), int(TILE_SIZE * 1.5))
+        y = self.floor_y - size[1]
+        obstacle = Item((x, y), size, item_type)
         obstacle.is_obstacle = True
+        obstacle.is_deadly = item_type in ['pedra', 'cacto']
         self.obstacles.add(obstacle)
+        self.obstacle_count += 1
+
+       
+        if self.obstacle_count % 7 == 0:
+            self.spawn_ground_good_item(2)
 
     def update(self):
         if self.game_won or self.game_over:
@@ -248,9 +267,9 @@ class Level:
         if random.randint(0, 100) < 5:  
             self.spawn_house()
 
- 
+
         for tile in self.tiles:
-            tile.rect.x -= self.scroll_speed
+            tile.rect.x -= self.scroll_speed + 4  
             if tile.rect.right < 0:
                 max_x = max(t.rect.x for t in self.tiles)
                 tile.rect.x = max_x + TILE_SIZE
@@ -272,28 +291,30 @@ class Level:
         player.apply_gravity()
         self.check_floor_collision(player)
 
-        self.spawn_timer += 1
-        if self.spawn_timer >= self.spawn_interval:
-          
-            if random.randint(0, 100) < 70:
-                self.spawn_good_item()
-            else:
-                self.spawn_bad_falling_item()
-            self.spawn_timer = 0
-            self.spawn_interval = random.randint(40, 80)
+        
+        self.difficulty_timer = getattr(self, 'difficulty_timer', 0) + 1
+        if self.difficulty_timer % 300 == 0:  
+            self.scroll_speed = min(self.scroll_speed + 0.5, 15)  
 
-   
+       
+        base_interval = max(30, 90 - int(self.scroll_speed * 5))
+
         self.obstacle_timer += 1
         if self.obstacle_timer >= self.obstacle_interval:
             self.spawn_obstacle()
             self.obstacle_timer = 0
-            self.obstacle_interval = random.randint(60, 120)
+            self.obstacle_interval = random.randint(base_interval, base_interval + 30)
 
-       
+
         for item in self.items:
             if hasattr(item, 'is_falling') and item.is_falling:
                 item.rect.y += item.fall_speed
                 if item.rect.top > SCREEN_HEIGHT:
+                    item.kill()
+            elif hasattr(item, 'is_ground_item') and item.is_ground_item:
+             
+                item.rect.x -= self.scroll_speed + 4
+                if item.rect.right < 0:
                     item.kill()
 
         for obstacle in self.obstacles:
@@ -306,13 +327,8 @@ class Level:
         self.check_obstacle_collisions()
 
     
-        if player.good_items_collected >= 10:
+        if player.good_items_collected >= 9:
             self.game_won = True
-            pygame.mixer.music.stop()
-
-       
-        if player.bad_items_collected >= 3:
-            self.game_over = True
             pygame.mixer.music.stop()
 
     def check_floor_collision(self, player):
@@ -341,6 +357,12 @@ class Level:
         player = self.player.sprite
         collided_obstacles = pygame.sprite.spritecollide(player, self.obstacles, True)
         for obstacle in collided_obstacles:
+            # Pedra e cacto = game over imediato
+            if hasattr(obstacle, 'is_deadly') and obstacle.is_deadly:
+                self.game_over = True
+                pygame.mixer.music.stop()
+                return
+            
             player.bad_items_collected += 1
             if obstacle.type in player.hints:
                 player.current_hint = player.hints[obstacle.type]
@@ -405,7 +427,7 @@ class Level:
 
         info_texts = [
             f"Fase: 1 - Runner",
-            f"Boas: {player.good_items_collected}/10 | Ruins: {player.bad_items_collected}/3"
+            f"Comidas: {player.good_items_collected}/9"
         ]
         font = pygame.font.Font(None, 32)
         line_height = 30

@@ -144,7 +144,7 @@ class WaterLevel:
 
  
     def start_music(self):
-        # Carrega a música configurada pelo usuário
+      
         path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
@@ -229,7 +229,8 @@ class WaterLevel:
         item_type = random.choice(item_types)
         pos_x = random.randint(0, SCREEN_WIDTH - TILE_SIZE)
         pos_y = -ITEM_SIZE
-        item = Item((pos_x, pos_y), (TILE_SIZE, TILE_SIZE), item_type)
+        size = (int(TILE_SIZE * 1.8), int(TILE_SIZE * 1.8))  # Maior
+        item = Item((pos_x, pos_y), size, item_type)
         self.items.add(item)
 
     def spawn_shark(self):

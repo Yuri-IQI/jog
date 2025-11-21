@@ -159,7 +159,7 @@ class Level3:
 
 
     def start_music(self):
-        # Carrega a música configurada pelo usuário
+     
         music_path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
@@ -172,7 +172,6 @@ class Level3:
             pass
 
     def get_music_path(self):
-        """Carrega o caminho da música do arquivo de configuração"""
         try:
             with open("music_config.json", "r") as f:
                 config = json.load(f)
@@ -191,8 +190,8 @@ class Level3:
                     self.tiles.add(tile)
 
     def place_items(self):
-        item_types = (['maca'] * 10 + ['alface'] * 7 + ['banana'] * 4 +
-                      ['sorvete'] * 6 + ['hamburguer'] * 8 + ['refrigerante'] * 10)
+        item_types = (['maca'] * 10 + ['alface'] * 9 + ['banana'] * 6 +
+                      ['sorvete'] * 4 + ['hamburguer'] * 6 + ['refrigerante'] * 5)
         potential_positions = []
         for y, row in enumerate(self.layout):
             for x, cell in enumerate(row):
@@ -208,26 +207,33 @@ class Level3:
         if potential_positions:
             random.shuffle(potential_positions)
             selected_positions = potential_positions[:15]
+            size = (int(TILE_SIZE * 1.8), int(TILE_SIZE * 1.8))  # Maior
             for pos in selected_positions:
                 item_type = random.choice(item_types)
-                item = Item(pos, (TILE_SIZE, TILE_SIZE), item_type)
+                item = Item(pos, size, item_type)
                 self.items.add(item)
 
     def place_cannons(self):
         positions = [
+            # Mais canhões distribuídos
             (60, 520, 1), (180, 500, -1), (300, 520, 1),
             (420, 500, -1), (540, 520, 1),
             (80, 400, 1), (240, 380, -1), (360, 400, 1),
             (500, 380, -1), (140, 260, 1), (380, 240, -1),
             (50, 180, 1), (280, 160, -1), (480, 180, 1),
             (120, 100, -1), (340, 80, 1), (560, 100, -1),
-            (200, 320, 1), (440, 300, -1), (320, 460, -1)
+            (200, 320, 1), (440, 300, -1), (320, 460, -1),
+            # Novos canhões
+            (20, 450, 1), (580, 450, -1), (160, 200, 1),
+            (400, 140, -1), (260, 280, 1), (520, 280, -1),
+            (100, 340, 1), (460, 360, -1), (300, 60, 1)
         ]
+        cannon_size = (int(TILE_SIZE * 2), int(TILE_SIZE * 2))  # Canhões maiores
         for pos_x, pos_y, direction in positions:
             cannon = pygame.sprite.Sprite()
-            image = self.cannon_image
+            image = pygame.transform.scale(self.cannon_image, cannon_size)
             if direction == -1:
-                image = pygame.transform.flip(self.cannon_image, True, False)
+                image = pygame.transform.flip(image, True, False)
             cannon.image = image
             cannon.rect = cannon.image.get_rect(topleft=(pos_x, pos_y))
             cannon.direction = direction
@@ -242,7 +248,7 @@ class Level3:
             projectile = Item((cannon.rect.centerx, cannon.rect.centery),
                               (TILE_SIZE, TILE_SIZE), bad_food)
             projectile.direction = cannon.direction
-            projectile.speed = 6
+            projectile.speed = 7
             self.projectiles.add(projectile)
 
     def update_projectiles(self):
