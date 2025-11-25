@@ -58,7 +58,7 @@ class Level3:
         "X   X   X     X   X     X",
         "X X X X X XXX X X X XXX X",
         "X X   X X   X   X     X X",
-        "X XXX X XXX XXXXX XXXXX X",
+        "X X   X XXX XXXXX XXXXX X",
         "X   X X   X     X     X X",
         "XXX X XXX XXXXX X XXX X X",
         "X   X   X X   X X   X   X",
@@ -67,18 +67,18 @@ class Level3:
         "XXXXX XXXXX XXXXX X XXX X",
         "X   X     X     X X   X X",
         "X X XXXXX XXX X X XXX X X",
-        "X X X   X   X X X   X X X",
+        "X X X   X   X   X   X X X",
         "X X X X XXX X X XXX XXX X",
         "X   X X   X   X   X   X X",
         "XXX X XXX XXXXX X XXX X X",
         "X   X   X     X X   X   X",
         "X XXXXX XXXXX X XXX XXXXX",
         "X X   X     X     X     X",
-        "X X X XXXXX XXXXX XXXXX X",
-        "X   X     X     X     X X",
+        "X X X XXXXX XXX   XXXXX X",
+        "X   X           X     X X",
         "XXX XXXXX XXX X XXXXX X X",
         "X         X   X       X X",
-        "X XXXXXXXXX XXX XXXXXXX X",
+        "X XXX XXXXX XXX XXXXXXX X",
         "X                       X",
         "X P  XXX XXX XXX XXX XX X",
         "XXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -207,7 +207,7 @@ class Level3:
         if potential_positions:
             random.shuffle(potential_positions)
             selected_positions = potential_positions[:15]
-            size = (int(TILE_SIZE * 1.8), int(TILE_SIZE * 1.8))  # Maior
+            size = (int(TILE_SIZE * 1.8), int(TILE_SIZE * 1.8))  
             for pos in selected_positions:
                 item_type = random.choice(item_types)
                 item = Item(pos, size, item_type)
@@ -215,7 +215,6 @@ class Level3:
 
     def place_cannons(self):
         positions = [
-            # Mais canhões distribuídos
             (60, 520, 1), (180, 500, -1), (300, 520, 1),
             (420, 500, -1), (540, 520, 1),
             (80, 400, 1), (240, 380, -1), (360, 400, 1),
@@ -223,12 +222,11 @@ class Level3:
             (50, 180, 1), (280, 160, -1), (480, 180, 1),
             (120, 100, -1), (340, 80, 1), (560, 100, -1),
             (200, 320, 1), (440, 300, -1), (320, 460, -1),
-            # Novos canhões
             (20, 450, 1), (580, 450, -1), (160, 200, 1),
             (400, 140, -1), (260, 280, 1), (520, 280, -1),
             (100, 340, 1), (460, 360, -1), (300, 60, 1)
         ]
-        cannon_size = (int(TILE_SIZE * 2), int(TILE_SIZE * 2))  # Canhões maiores
+        cannon_size = (int(TILE_SIZE * 1.5), int(TILE_SIZE * 1.5))  
         for pos_x, pos_y, direction in positions:
             cannon = pygame.sprite.Sprite()
             image = pygame.transform.scale(self.cannon_image, cannon_size)

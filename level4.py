@@ -214,6 +214,7 @@ class Boss(pygame.sprite.Sprite):
         tinted = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
         tinted.fill((255, 50, 50, 100))
         self.image.blit(tinted, (0, 0))
+        self.rage_just_activated = True  
 
     def update_explosion(self):
         if not self.dead:
@@ -293,9 +294,10 @@ class BossLevel:
         # Sistema de cutscene
         self.cutscene = Cutscene([
             ("Farmador de Aura", "Finalmente cheguei até você! Seu reinado de junk food acaba aqui!"),
-            ("Boss Betinha", "Você ousa me desafiar? Vou te enterrar em hambúrgueres e refrigerantes!")
+            ("Pepsi", "Você ousa me desafiar? Vou te enterrar em hambúrgueres e refrigerantes!")
         ])
         self.cutscene_active = True
+        self.rage_cutscene_shown = False
 
     def build_floor(self):
         floor_y = SCREEN_HEIGHT - TILE_SIZE
@@ -343,7 +345,6 @@ class BossLevel:
                 self.tile_images.append(surf)
 
     def start_music(self):
-        # Carrega a música configurada pelo usuário
         path = self.get_music_path()
         if not pygame.mixer.get_init():
             pygame.mixer.init()
@@ -356,7 +357,6 @@ class BossLevel:
             pass
 
     def get_music_path(self):
-        """Carrega o caminho da música do arquivo de configuração"""
         try:
             with open("music_config.json", "r") as f:
                 config = json.load(f)
@@ -373,6 +373,16 @@ class BossLevel:
 
         player = self.player.sprite
         boss = self.boss.sprite
+
+     
+        if hasattr(boss, 'rage_just_activated') and boss.rage_just_activated and not self.rage_cutscene_shown:
+            boss.rage_just_activated = False
+            self.rage_cutscene_shown = True
+            self.cutscene = Cutscene([
+                ("Pepsi", "Ainda não acabou!")
+            ])
+            self.cutscene_active = True
+            return
 
         player.update()
         keys = pygame.key.get_pressed()

@@ -9,7 +9,7 @@ TILE_COLUMNS = 25
 TILE_ROWS = 28
 TILE_SIZE = SCREEN_WIDTH // TILE_COLUMNS
 SCREEN_HEIGHT = TILE_ROWS * TILE_SIZE
-ITEM_SIZE = TILE_SIZE * 0.8
+ITEM_SIZE = TILE_SIZE * 1.0
 
 
 class House(pygame.sprite.Sprite):
@@ -135,7 +135,7 @@ class Level:
                 self.tile_images.append(scaled)
             except Exception:
                 surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-                surf.fill((34, 139, 34))  
+                surf.fill((58, 139, 58))  
                 self.tile_images.append(surf)
 
     def start_music(self):
@@ -161,12 +161,13 @@ class Level:
             return "assets/backgrounds/audio/Aquatic Ambience.mp3"
 
     def build_floor(self):
-      
-        num_tiles = (SCREEN_WIDTH // TILE_SIZE) + 3
+        num_tiles = (SCREEN_WIDTH // TILE_SIZE) + 10
         for i in range(num_tiles):
             tile = pygame.sprite.Sprite()
             tile.image = random.choice(self.tile_images)
-            tile.rect = tile.image.get_rect(topleft=(i * TILE_SIZE, self.floor_y))
+            # Posição exata sem gaps
+            tile.rect = tile.image.get_rect()
+            tile.rect.topleft = (i * TILE_SIZE, self.floor_y)
             self.tiles.add(tile)
 
     def spawn_initial_houses(self):
@@ -218,8 +219,7 @@ class Level:
         size = (int(TILE_SIZE * 1.5), int(TILE_SIZE * 1.5))
         for i in range(count):
             item_type = random.choice(good_foods)
-            x = SCREEN_WIDTH + TILE_SIZE * 6 + (i * TILE_SIZE * 4)  # Mais distante dos obstáculos
-            # Posição no ar (para pular e pegar)
+            x = SCREEN_WIDTH + TILE_SIZE * 6 + (i * TILE_SIZE * 4) 
             y = self.floor_y - TILE_SIZE * random.randint(3, 5)
             item = Item((x, y), size, item_type)
             item.is_ground_item = True
@@ -229,7 +229,6 @@ class Level:
         obstacle_types = ['pedra', 'cacto', 'hamburguer', 'refrigerante', 'sorvete']
         item_type = random.choice(obstacle_types)
         x = SCREEN_WIDTH + TILE_SIZE
-        # Pedras e cactos são bem maiores
         if item_type in ['pedra', 'cacto']:
             size = (int(TILE_SIZE * 2.5), int(TILE_SIZE * 2.5))
         else:
@@ -269,10 +268,11 @@ class Level:
 
 
         for tile in self.tiles:
-            tile.rect.x -= self.scroll_speed + 4  
+            tile.rect.x -= self.scroll_speed + 4
             if tile.rect.right < 0:
-                max_x = max(t.rect.x for t in self.tiles)
-                tile.rect.x = max_x + TILE_SIZE
+                # Reposiciona exatamente após a última tile (sem gaps)
+                max_x = max(t.rect.right for t in self.tiles)
+                tile.rect.left = max_x
 
        
         player.update()
@@ -357,7 +357,6 @@ class Level:
         player = self.player.sprite
         collided_obstacles = pygame.sprite.spritecollide(player, self.obstacles, True)
         for obstacle in collided_obstacles:
-            # Pedra e cacto = game over imediato
             if hasattr(obstacle, 'is_deadly') and obstacle.is_deadly:
                 self.game_over = True
                 pygame.mixer.music.stop()
