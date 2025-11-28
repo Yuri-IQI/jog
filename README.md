@@ -1,7 +1,6 @@
 # Projeto **Jog (Based)**
 
-Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, criado como requisito da disciplina **Laboratório de Engenharia de Software**.  
-O jogo possui **quatro fases** e um **menu de configurações**, onde o jogador pode escolher quais músicas deseja ouvir em cada fase.
+Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, criado como requisito da disciplina **Laboratório de Engenharia de Software**. Ele consiste em um plataformer de **quatro fases** com um **menu de configurações**, onde o jogador pode escolher quais músicas deseja ouvir em cada fase.
 
 ## Como Executar
 
