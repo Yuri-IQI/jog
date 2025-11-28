@@ -89,6 +89,31 @@ Nesta fase, o jogador nada em uma área submersa, podendo se mover livremente en
 - **Itens bons aquáticos:**  
   Itens aparecem ao longo do percurso e devem ser coletados para progredir.
 
+### Fase 3 — **Labirinto**
+Nesta fase, o jogador deve atravessar um mapa de **baixa visibilidade** e **espaços estreitos**, enquanto desvia de disparos de itens ruins lançados por canhões.  
+O objetivo é **alcançar a saída localizada no topo do mapa**.
+
+### Mecânicas principais:
+- **Canhões de itens ruins:**  
+  Diversos canhões estão posicionados pelo cenário, disparando itens ruins em intervalos constantes.
+- **Modificação da altura do pulo:**  
+  Consumir itens bons aumenta a altura do pulo do jogador, enquanto itens ruins diminuem essa altura.
+- **Vidas limitadas:**  
+  O jogador possui **3 vidas**, perdendo uma a cada vez que é atingido por um item ruim.
+
+---
+
+### Fase 4 — **Boss**
+Na fase final, o jogador enfrenta uma **marca de refrigerantes** em uma batalha decisiva.
+
+### Mecânicas principais:
+- **Boss com dois modos de combate:**  
+  Ao atingir metade da vida, o Boss entra em um segundo modo, tornando-se mais rápido e mais agressivo.
+- **Disparo do jogador:**  
+  O jogador pode atacar o Boss usando disparos, pressionando as teclas **F** ou **K**.
+- **Itens especiais:**  
+  Ao causar dano ao Boss, novos itens caem no cenário. Eles podem **melhorar o disparo** ou fornecer **armadura**, oferecendo proteção adicional.
+
 ## Documentação
 A pasta **`docs/`** contém documentos que descrevem as principais funcionalidades da aplicação.  
 Eles são recomendados para auxiliar no entendimento da arquitetura e das decisões de implementação do projeto.
