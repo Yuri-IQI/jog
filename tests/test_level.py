@@ -1,8 +1,6 @@
-import os
-import sys
-os.environ["SDL_VIDEODRIVER"] = "dummy"
-
+import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 import pygame
 import pytest
