@@ -1,6 +1,6 @@
 # Projeto **Jog (Based)**
 
-Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, criado como requisito da disciplina **Laboratório de Engenharia de Software**. Ele consiste em um plataformer de **quatro fases** com um **menu de configurações**, onde o jogador pode escolher quais músicas deseja ouvir em cada fase.
+Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, criado como requisito da disciplina **Laboratório de Engenharia de Software**, com o objetivo de estimular uma nutrição saudável de uma forma divertida. Ele consiste em um plataformer de **quatro fases** com um **menu de configurações**, onde o jogador pode escolher quais músicas deseja ouvir em cada fase.
 
 ## Como Executar
 
@@ -89,6 +89,8 @@ Nesta fase, o jogador nada em uma área submersa, podendo se mover livremente en
 - **Itens bons aquáticos:**  
   Itens aparecem ao longo do percurso e devem ser coletados para progredir.
 
+---
+
 ### Fase 3 — **Labirinto**
 Nesta fase, o jogador deve atravessar um mapa de **baixa visibilidade** e **espaços estreitos**, enquanto desvia de disparos de itens ruins lançados por canhões.  
 O objetivo é **alcançar a saída localizada no topo do mapa**.
@@ -115,7 +117,7 @@ Na fase final, o jogador enfrenta uma **marca de refrigerantes** em uma batalha 
   Ao causar dano ao Boss, novos itens caem no cenário. Eles podem **melhorar o disparo** ou fornecer **armadura**, oferecendo proteção adicional.
 
 ## Documentação
-A pasta **`docs/`** contém documentos que descrevem as principais funcionalidades da aplicação.  
+A pasta **`docs/`** contém documentos que descrevem as principais funcionalidades da aplicação de forma técnica.  
 Eles são recomendados para auxiliar no entendimento da arquitetura e das decisões de implementação do projeto.
 
 ## Testes
