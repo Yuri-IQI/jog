@@ -23,7 +23,7 @@ ou
 pip3 install -r requirements.txt
 ```
 
-2. Execute o jogo com o comando:
+3. Execute o jogo com o comando:
 
 ```bash
 python -m main
