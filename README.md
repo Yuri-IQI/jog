@@ -13,7 +13,7 @@ Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, c
 git clone https://github.com/yuri-iqi/jog.git
 ```
 
-1. Instale as dependências listadas em `requirements.txt` com o comando:
+2. Instale as dependências listadas em `requirements.txt` com o comando:
 
 ```bash
 pip install -r requirements.txt
