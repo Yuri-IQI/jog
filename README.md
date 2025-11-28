@@ -8,6 +8,11 @@ Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, c
 - Python 3 instalado
 
 ### **Passos**
+1. Clone o repositório com:
+```bash
+git clone https://github.com/yuri-iqi/jog.git
+```
+
 1. Instale as dependências listadas em `requirements.txt` com o comando:
 
 ```bash
