@@ -161,14 +161,14 @@ class Level:
             return "assets/backgrounds/audio/Aquatic Ambience.mp3"
 
     def build_floor(self):
-        num_tiles = (SCREEN_WIDTH // TILE_SIZE) + 10
-        for i in range(num_tiles):
-            tile = pygame.sprite.Sprite()
-            tile.image = random.choice(self.tile_images)
-            # Posição exata sem gaps
-            tile.rect = tile.image.get_rect()
-            tile.rect.topleft = (i * TILE_SIZE, self.floor_y)
-            self.tiles.add(tile)
+        floor_width = SCREEN_WIDTH * 2  
+        self.floor_surface = pygame.Surface((floor_width, TILE_SIZE))
+
+        for i in range(floor_width // TILE_SIZE + 1):
+            tile_img = random.choice(self.tile_images)
+            self.floor_surface.blit(tile_img, (i * TILE_SIZE, 0))
+
+        self.floor_x = 0.0  
 
     def spawn_initial_houses(self):
   
@@ -267,12 +267,12 @@ class Level:
             self.spawn_house()
 
 
-        for tile in self.tiles:
-            tile.rect.x -= self.scroll_speed + 4
-            if tile.rect.right < 0:
-                # Reposiciona exatamente após a última tile (sem gaps)
-                max_x = max(t.rect.right for t in self.tiles)
-                tile.rect.left = max_x
+       
+        scroll_amount = self.scroll_speed + 4
+        self.floor_x -= scroll_amount
+
+        if self.floor_x <= -SCREEN_WIDTH:
+            self.floor_x += SCREEN_WIDTH
 
        
         player.update()
@@ -376,11 +376,11 @@ class Level:
             if self.background_x < 0:
                 screen.blit(self.background_image, (self.background_x + self.background_width, 0))
 
-  
+
         self.houses.draw(screen)
 
-   
-        self.tiles.draw(screen)
+        
+        screen.blit(self.floor_surface, (int(self.floor_x), self.floor_y))
 
       
         self.items.draw(screen)

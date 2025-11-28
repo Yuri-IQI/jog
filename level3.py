@@ -58,13 +58,13 @@ class Level3:
         "X   X   X     X   X     X",
         "X X X X X XXX X X X XXX X",
         "X X   X X   X   X     X X",
-        "X X   X XXX XXXXX XXXXX X",
+        "X X         XXXXX XXXXX X",
         "X   X X   X     X     X X",
-        "XXX X XXX XXXXX X XXX X X",
+        "XXX X           X XXX X X",
         "X   X   X X   X X   X   X",
         "X XXXXX X X X X XXX XXX X",
         "X     X   X X   X   X   X",
-        "XXXXX XXXXX XXXXX X XXX X",
+        "XXXXX             X XXX X",
         "X   X     X     X X   X X",
         "X X XXXXX XXX X X XXX X X",
         "X X X   X   X   X   X X X",
@@ -72,13 +72,13 @@ class Level3:
         "X   X X   X   X   X   X X",
         "XXX X XXX XXXXX X XXX X X",
         "X   X   X     X X   X   X",
-        "X XXXXX XXXXX X XXX XXXXX",
+        "X XX       XX X XXX XXXXX",
         "X X   X     X     X     X",
         "X X X XXXXX XXX   XXXXX X",
-        "X   X           X     X X",
+        "X   X           X       X",
         "XXX XXXXX XXX X XXXXX X X",
-        "X         X   X       X X",
-        "X XXX XXXXX XXX XXXXXXX X",
+        "X         X   X         X",
+        "X XXX X      XX XXXXXXX X",
         "X                       X",
         "X P  XXX XXX XXX XXX XX X",
         "XXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -190,8 +190,8 @@ class Level3:
                     self.tiles.add(tile)
 
     def place_items(self):
-        item_types = (['maca'] * 10 + ['alface'] * 9 + ['banana'] * 6 +
-                      ['sorvete'] * 4 + ['hamburguer'] * 6 + ['refrigerante'] * 5)
+        item_types = (['maca'] * 12 + ['alface'] * 10 + ['banana'] * 8 +
+                      ['sorvete'] * 8 + ['hamburguer'] * 10 + ['refrigerante'] * 8)
         potential_positions = []
         for y, row in enumerate(self.layout):
             for x, cell in enumerate(row):
@@ -206,8 +206,8 @@ class Level3:
                         potential_positions.append((pos_x, pos_y))
         if potential_positions:
             random.shuffle(potential_positions)
-            selected_positions = potential_positions[:15]
-            size = (int(TILE_SIZE * 1.8), int(TILE_SIZE * 1.8))  
+            selected_positions = potential_positions[:35]  
+            size = (int(TILE_SIZE * 1.3), int(TILE_SIZE * 1.3))  
             for pos in selected_positions:
                 item_type = random.choice(item_types)
                 item = Item(pos, size, item_type)
