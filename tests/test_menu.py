@@ -64,7 +64,7 @@ def test_music_config_next_changes_selection():
 
     assert menu.current_music_selection[1] == (old + 1) % len(menu.available_musics)
 
-# TC006-MNU — Tocar música no player de música
+# TC006 — Tocar música no player de música
 @patch("pygame.mixer.music")
 def test_music_player_play(mock_music):
     menu = MainMenu()
@@ -75,7 +75,7 @@ def test_music_player_play(mock_music):
 
     assert menu.music_player_playing is True
 
-# TC007-MNU — Parar música no player de música
+# TC007 — Parar música no player de música
 @patch("pygame.mixer.music")
 def test_music_player_stop(mock_music):
     menu = MainMenu()
@@ -88,7 +88,7 @@ def test_music_player_stop(mock_music):
     assert menu.music_player_playing is False
     mock_music.stop.assert_called_once()
     
-# TC008-MNU — Sair do jogo pelo menu
+# TC008 — Sair do jogo pelo menu
 def test_main_click_quit():
     menu = MainMenu()
     btn = menu.buttons["main"]["quit"]
