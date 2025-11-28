@@ -93,11 +93,13 @@ class Item(pygame.sprite.Sprite):
             pygame.draw.line(self.image, (255, 255, 200), (w * 0.6, h * (0.35 + i * 0.18)), (w * 0.65, h * (0.33 + i * 0.18)), 1)
 
     def update(self):
-     
-    
         self.float_y += self.float_speed * self.float_direction
 
         if abs(self.float_y - self.base_y) >= self.float_range:
             self.float_direction *= -1
 
-        self.rect.y = int(self.float_y)
+        dy = self.float_y - self.rect.y
+        if abs(dy) < 1:
+            self.rect.y += 1 * self.float_direction
+        else:
+            self.rect.y = int(self.float_y)

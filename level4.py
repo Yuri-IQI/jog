@@ -386,9 +386,9 @@ class BossLevel:
 
         player.update()
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             player.direction.x = -1
-        elif keys[pygame.K_RIGHT]:
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             player.direction.x = 1
         else:
             player.direction.x = 0
@@ -399,7 +399,7 @@ class BossLevel:
 
         if keys[pygame.K_SPACE] and player.on_ground:
             player.jump()
-        if keys[pygame.K_f]:
+        if keys[pygame.K_f] or keys[pygame.K_j]:
             self.shoot_laser()
 
         player.rect.x += player.direction.x * player.speed
