@@ -5,7 +5,7 @@ Este projeto consiste em um jogo educativo simples desenvolvido em **Pygame**, c
 ## Como Executar
 
 ### **Pré-requisitos**
-- Python 3 instalado
+- Python 3.12.16 instalado
 
 ### **Passos**
 1. Clone o repositório com:
